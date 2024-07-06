@@ -48,4 +48,4 @@ jobs:
       id: deployment
       uses: actions/deploy-pages@v1
       with:
-        artifact_name: "static-content"
+        artifact_name: "static-content/index.html"
