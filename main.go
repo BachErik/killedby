@@ -1,15 +1,22 @@
 package main
 
 import (
+    "os"
     "fmt"
-    "net/http"
 )
 
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "Hello World!")
-}
-
 func main() {
-    http.HandleFunc("/", helloHandler)
-    http.ListenAndServe(":8080", nil)
+    f, err := os.Create("index.html")
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    defer f.Close()
+
+    _, err = f.WriteString("<html><body>Hello World!</body></html>")
+    if err != nil {
+        fmt.Println(err)
+        f.Close()
+        return
+    }
 }
