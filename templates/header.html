@@ -10,6 +10,22 @@
             background-color: #121212;
             color: #e0e0e0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-y: scroll;
+        }
+        /* Scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 12px; /* width of the entire scrollbar */
+        }
+        ::-webkit-scrollbar-track {
+            background: #2c2c2c; /* color of the track */
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #bb86fc; /* color of the scroll thumb */
+            border-radius: 10px; /* roundness of the scroll thumb */
+            border: 3px solid #2c2c2c; /* creates padding around scroll thumb */
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9a67ea; /* color of the scroll thumb when hovered */
         }
         a {
             color: #bb86fc;
