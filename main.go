@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -288,7 +287,7 @@ func fetchJSON(url, cacheFileName string, v interface{}) error {
 	if info, err := os.Stat(cacheFilePath); err == nil {
 		if time.Since(info.ModTime()) < cacheDuration {
 			// Read from the cached file
-			bytes, err := ioutil.ReadFile(cacheFilePath)
+			bytes, err := os.ReadFile(cacheFilePath)
 			if err != nil {
 				return err
 			}
@@ -321,7 +320,7 @@ func fetchJSON(url, cacheFileName string, v interface{}) error {
 	}
 
 	// Write the data to the cache file
-	err = ioutil.WriteFile(cacheFilePath, bytes, 0644)
+	err = os.WriteFile(cacheFilePath, bytes, 0644)
 	if err != nil {
 		return err
 	}
