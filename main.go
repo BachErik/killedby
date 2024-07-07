@@ -48,10 +48,15 @@ type BasePageData struct {
 	Companies map[string]string
 }
 
+type YearProjects struct {
+	Year     string
+	Projects []Project
+}
+
 type IndexPageData struct {
 	BasePageData
-	Projects []Project
-	Types    map[string]string
+	YearsProjects []YearProjects
+	Types         map[string]string
 }
 
 type CompanyPageData struct {
@@ -102,9 +107,29 @@ func main() {
 		allProjects = append(allProjects, projects...)
 	}
 
-	// Sort projects by date
-	sort.Slice(allProjects, func(i, j int) bool {
-		return allProjects[i].DateClose > allProjects[j].DateClose
+	// Group projects by year
+	projectYearMap := make(map[string][]Project)
+	for _, project := range allProjects {
+		year := strings.Split(project.DateClose, "-")[0] // Assuming DateClose is in YYYY-MM-DD format
+		projectYearMap[year] = append(projectYearMap[year], project)
+	}
+
+	// Sort projects within each year
+	for _, projects := range projectYearMap {
+		sort.Slice(projects, func(i, j int) bool {
+			return projects[i].DateClose > projects[j].DateClose
+		})
+	}
+
+	// Convert the map to a slice for ordered processing in templates
+	var yearsProjects []YearProjects
+	for year, projects := range projectYearMap {
+		yearsProjects = append(yearsProjects, YearProjects{Year: year, Projects: projects})
+	}
+
+	// Sort years to display them in order
+	sort.Slice(yearsProjects, func(i, j int) bool {
+		return yearsProjects[i].Year > yearsProjects[j].Year
 	})
 
 	funcMap := template.FuncMap{
@@ -133,11 +158,10 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		pageData := IndexPageData{
 			BasePageData: BasePageData{
-				Title:     "Companies and Projects",
+				Title:     "Projects by Year",
 				Companies: make(map[string]string),
 			},
-			Projects: allProjects,
-			Types:    projectTypes,
+			YearsProjects: yearsProjects, // Using the grouped projects by year
 		}
 
 		for companyName, company := range companyConfig {
@@ -147,7 +171,7 @@ func main() {
 		err := tmpl.ExecuteTemplate(w, "index", pageData)
 		if err != nil {
 			log.Printf("Error executing template: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			http.Error(w, "Internal Server Error", 500)
 		}
 	})
 
@@ -175,7 +199,7 @@ func main() {
 		err := tmpl.ExecuteTemplate(w, "company", companyPageData)
 		if err != nil {
 			log.Printf("Error executing template: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			http.Error(w, "Internal Server Error", 500)
 		}
 	})
 
@@ -223,7 +247,7 @@ func main() {
 		err := tmpl.ExecuteTemplate(w, "project", projectPageData)
 		if err != nil {
 			log.Printf("Error executing template: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			http.Error(w, "Internal Server Error", 500)
 		}
 	})
 
