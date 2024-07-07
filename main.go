@@ -189,8 +189,11 @@ const projectTemplate = `<!DOCTYPE html>
     </header>
     <main>
         <p>{{ .Description }}</p>
-        <p><a href="{{ .Link }}">{{ .Link }}</a></p>
-        <p>Opened: {{ .DateOpen }} Closed: {{ .DateClose }}</p>
+        <p>Released: {{ .DateOpen }}</p>
+		<p>Discontinued: {{ .DateClose }}</p>
+		<p>Lifespan: </p>
+		<p>Company: {{ .Company }}</p>
+		<p>Source: <a href="{{ .Link }}">{{ .Link }}</a></p>
     </main>
     <footer>
         <p>&copy; 2024 {{ .Company }}</p>

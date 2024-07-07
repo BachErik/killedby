@@ -23,9 +23,7 @@
                     {{ .Name }}
                 </a> - {{ .Description }}
                 <br>
-                <a href="{{ .Link }}">{{ .Link }}</a>
-                <br>
-                Opened: {{ .DateOpen }} Closed: {{ .DateClose }}
+                {{ .DateOpen }} - {{ .DateClose }}
             </li>
             {{ end }}
         </ul>

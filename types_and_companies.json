@@ -5,6 +5,7 @@
         "other": "#0000ff"
     },
     "companies": {
-        "BachErik": "assets/img/BachErik.png"
+        "google": "assets/img/google-logo.png",
+        "apple": "assets/img/apple-logo.png"
     }
 }
