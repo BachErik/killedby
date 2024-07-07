@@ -1,7 +1,9 @@
 {{ define "project_card" }}
 <div class="card">
     <a href="/project/{{ .Project.Company }}/{{ .Project.Name }}" class="card-link">
-        <img class="company-logo" src="{{ index .Companies .Project.Company }}" alt="{{ .Project.Company }} logo">
+        <div class="card-logo-container">
+            <img class="card-logo" src="{{ index .Companies .Project.Company }}" alt="{{ .Project.Company }} logo">
+        </div>
         <h3>{{ .Project.Name }}</h3>
         <p class="description">
             {{ if gt (len .Project.Description) 100 }}
@@ -16,4 +18,20 @@
         </div>
     </a>
 </div>
+<style>
+    .card-logo-container {
+        display: flex;
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
+        width: 100%; /* Full width of the card */
+        height: 100px; /* Adjust as needed for the card */
+    }
+    .card-logo {
+        max-width: 100%; /* Ensure the image scales */
+        max-height: 100%; /* Ensure the image scales */
+        height: auto; /* Maintain aspect ratio */
+        width: auto; /* Maintain aspect ratio */
+        object-fit: contain; /* Ensure the image fits within the dimensions while maintaining aspect ratio */
+    }
+</style>
 {{ end }}

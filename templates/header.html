@@ -34,10 +34,19 @@
         a:hover {
             text-decoration: underline;
         }
-        .company-logo {
-            max-width: 30px;
-            max-height: 30px;
-            vertical-align: middle;
+        .header-logo-container {
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            width: 50px; /* Set the width for the container */
+            height: 50px; /* Set the height for the container */
+        }
+        .header-logo {
+            max-width: 100%; /* Ensure the image scales */
+            max-height: 100%; /* Ensure the image scales */
+            height: auto; /* Maintain aspect ratio */
+            width: auto; /* Maintain aspect ratio */
+            object-fit: contain; /* Ensure the image fits within the dimensions while maintaining aspect ratio */
         }
         .cards {
             display: grid;
@@ -113,11 +122,6 @@
         header .home-link:hover {
             background-color: #9a67ea;
         }
-        .company-logo {
-            max-width: 50px;
-            max-height: 50px;
-            vertical-align: middle;
-        }
     </style>    
 </head>
 <body>
@@ -125,7 +129,11 @@
         <h2><a href="/" class="home-link">Killed by</a></h2>
         <ul>
             {{ range $company, $logo := .Companies }}
-            <li><a href="/company/{{ $company }}"><img class="company-logo" src="{{ $logo }}" alt="{{ $company }}" title="{{ $company }}" /></a></li>
+            <li><a href="/company/{{ $company }}">
+                <div class="header-logo-container">
+                    <img class="header-logo" src="{{ $logo }}" alt="{{ $company }} logo" title="{{ $company }}"/>
+                </div>
+            </a></li>
             {{ end }}
         </ul>
     </header>
