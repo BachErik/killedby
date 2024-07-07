@@ -9,7 +9,7 @@
         body {
             background-color: #121212;
             color: #e0e0e0;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         a {
             color: #bb86fc;
@@ -57,17 +57,61 @@
             color: #bbb;
             margin: 10px 0;
         }
+        header {
+            background-color: #242424;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        header h2 {
+            margin: 0;
+            color: #ffffff;
+        }
+        header ul {
+            list-style: none;
+            display: flex;
+            margin: 0;
+            padding: 0;
+        }
+        header ul li {
+            margin-left: 20px;
+        }
+        header ul li a {
+            color: #bb86fc;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        header ul li a:hover {
+            text-decoration: underline;
+        }
+        header .home-link {
+            color: #ffffff;
+            text-decoration: none;
+            background-color: #bb86fc;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        header .home-link:hover {
+            background-color: #9a67ea;
+        }
+        .company-logo {
+            max-width: 50px;
+            max-height: 50px;
+            vertical-align: middle;
+        }
     </style>    
 </head>
 <body>
     <header>
-        <h2>Companies</h2>
+        <h2><a href="/" class="home-link">Killed by</a></h2>
         <ul>
             {{ range $company, $logo := .Companies }}
-            <li><a href="/company/{{ $company }}"><img class="company-logo" src="{{ $logo }}" alt="{{ $company }}" /></a></li>
+            <li><a href="/company/{{ $company }}"><img class="company-logo" src="{{ $logo }}" alt="{{ $company }}" title="{{ $company }}" /></a></li>
             {{ end }}
         </ul>
-        <a href="/">Home</a>
     </header>
     <main>
 {{ end }}
