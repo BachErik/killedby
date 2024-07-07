@@ -3,7 +3,7 @@
 <h1>Projects by {{ .Title }}</h1>
 {{ range .YearsProjects }}
 <div class="year-group" id="{{ .Year }}">
-    <h2>{{ .Year }}</h2>
+    <h2><a href="#{{ .Year }}">{{ .Year }}</a></h2>
     <div class="cards">
         {{ range .Projects }}
         {{ template "project_card" dict "Project" . "Companies" $.Companies "Types" $.Types }}
@@ -20,6 +20,13 @@
         text-align: center;
         margin-top: 40px;
         color: #bb86fc;
+    }
+    .year-group h2 a {
+        color: #bb86fc;
+        text-decoration: none;
+    }
+    .year-group h2 a:hover {
+        text-decoration: underline;
     }
     .cards {
         display: grid;
