@@ -1,16 +1,10 @@
 {{ define "company" }}
 {{ template "header" . }}
 <h1>Projects by {{ .Title }}</h1>
-<ul>
+<div class="cards">
     {{ range .Projects }}
-    <li>
-        <a href="/project/{{ .Company }}/{{ .Name }}" style="color: {{ index $.Types .Type }}">
-            {{ .Name }}
-        </a> - {{ .Description }}
-        <br>
-        {{ .DateOpen }} - {{ .DateClose }}
-    </li>
+        {{ template "project_card" dict "Project" . "Companies" $.Companies "Types" $.Types }}
     {{ end }}
-</ul>
+</div>
 {{ template "footer" . }}
 {{ end }}

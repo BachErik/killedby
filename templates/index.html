@@ -3,21 +3,7 @@
 <h1>Projects</h1>
 <div class="cards">
     {{ range .Projects }}
-    <a href="/project/{{ .Company }}/{{ .Name }}" class="card-link">
-        <div class="card">
-            <img class="company-logo" src="{{ index $.Companies .Company }}" alt="{{ .Company }} logo" />
-            <h3>{{ .Name }}</h3>
-            <p class="description">
-                {{ if gt (len .Description) 100 }}
-                    {{ slice .Description 0 100 }}...
-                {{ else }}
-                    {{ .Description }}
-                {{ end }}
-            </p>
-            <span class="tag" style="background-color: #444;">{{ .DateOpen }} - {{ .DateClose }}</span>
-            <span class="tag" style="background-color: {{ index $.Types .Type }}; color: #f0f0f0;">{{ .Type }}</span>
-        </div>
-    </a>
+        {{ template "project_card" dict "Project" . "Companies" $.Companies "Types" $.Types }}
     {{ end }}
 </div>
 {{ template "footer" . }}
