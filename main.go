@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -64,7 +65,7 @@ type ProjectPageData struct {
 }
 
 func main() {
-	// URLs for the JSON files
+	// URLs for the JSON files and other initial setup
 	companiesURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/main/config/companies.json", githubUsername, githubRepository)
 	typesURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/main/config/types.json", githubUsername, githubRepository)
 
@@ -100,7 +101,12 @@ func main() {
 		allProjects = append(allProjects, projects...)
 	}
 
-	// Parse the templates from the templates folder
+	// Sort projects by date
+	sort.Slice(allProjects, func(i, j int) bool {
+		return allProjects[i].DateClose > allProjects[j].DateClose
+	})
+
+	// Setup templates, server, and handlers
 	tmpl, err := template.ParseGlob("templates/*.html")
 	if err != nil {
 		log.Fatalf("Error parsing templates: %v", err)
