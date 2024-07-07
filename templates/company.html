@@ -1,10 +1,42 @@
 {{ define "company" }}
 {{ template "header" . }}
 <h1>Projects by {{ .Title }}</h1>
-<div class="cards">
-    {{ range .Projects }}
+{{ range .YearsProjects }}
+<div class="year-group" id="{{ .Year }}">
+    <h2>{{ .Year }}</h2>
+    <div class="cards">
+        {{ range .Projects }}
         {{ template "project_card" dict "Project" . "Companies" $.Companies "Types" $.Types }}
-    {{ end }}
+        {{ end }}
+    </div>
 </div>
+{{ end }}
 {{ template "footer" . }}
+<style>
+    html {
+        scroll-behavior: smooth; /* Ensure smooth scrolling is enabled */
+    }
+    .year-group h2 {
+        text-align: center;
+        margin-top: 40px;
+        color: #bb86fc;
+    }
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-gap: 20px;
+        padding: 20px;
+    }
+</style>
+<script>
+    window.addEventListener('load', (event) => {
+        if(window.location.hash) {
+            const id = window.location.hash; // Get the hash from URL
+            const element = document.querySelector(id);
+            if(element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    });
+</script>
 {{ end }}

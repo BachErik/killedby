@@ -61,8 +61,8 @@ type IndexPageData struct {
 
 type CompanyPageData struct {
 	BasePageData
-	Projects []Project
-	Types    map[string]string
+	YearsProjects []YearProjects
+	Types         map[string]string
 }
 
 type ProjectPageData struct {
@@ -183,13 +183,31 @@ func main() {
 			return
 		}
 
+		// Group projects by year within the company
+		projectYearMap := make(map[string][]Project)
+		for _, project := range company.Projects {
+			year := strings.Split(project.DateClose, "-")[0] // Extract year from DateClose
+			projectYearMap[year] = append(projectYearMap[year], project)
+		}
+
+		// Convert the map to a slice for ordered processing in templates
+		var yearsProjects []YearProjects
+		for year, projects := range projectYearMap {
+			yearsProjects = append(yearsProjects, YearProjects{Year: year, Projects: projects})
+		}
+
+		// Sort years to display them in order
+		sort.Slice(yearsProjects, func(i, j int) bool {
+			return yearsProjects[i].Year > yearsProjects[j].Year
+		})
+
 		companyPageData := CompanyPageData{
 			BasePageData: BasePageData{
 				Title:     companyName,
 				Companies: make(map[string]string),
 			},
-			Projects: company.Projects,
-			Types:    projectTypes,
+			YearsProjects: yearsProjects, // Use grouped projects by year
+			Types:         projectTypes,
 		}
 
 		for companyName, company := range companyConfig {
