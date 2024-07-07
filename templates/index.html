@@ -1,16 +1,24 @@
 {{ define "index" }}
 {{ template "header" . }}
 <h1>Projects</h1>
-<ul>
+<div class="cards">
     {{ range .Projects }}
-    <li>
-        <a href="/project/{{ .Company }}/{{ .Name }}" style="color: {{ index $.Types .Type }}">
-            {{ .Name }}
-        </a> - {{ .Description }}
-        <br>
-        {{ .DateOpen }} - {{ .DateClose }}
-    </li>
+    <a href="/project/{{ .Company }}/{{ .Name }}" class="card-link">
+        <div class="card">
+            <img class="company-logo" src="{{ index $.Companies .Company }}" alt="{{ .Company }} logo" />
+            <h3>{{ .Name }}</h3>
+            <p class="description">
+                {{ if gt (len .Description) 100 }}
+                    {{ slice .Description 0 100 }}...
+                {{ else }}
+                    {{ .Description }}
+                {{ end }}
+            </p>
+            <span class="tag" style="background-color: #444;">{{ .DateOpen }} - {{ .DateClose }}</span>
+            <span class="tag" style="background-color: {{ index $.Types .Type }}; color: #f0f0f0;">{{ .Type }}</span>
+        </div>
+    </a>
     {{ end }}
-</ul>
+</div>
 {{ template "footer" . }}
 {{ end }}
