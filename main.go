@@ -2,25 +2,26 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"html/template"
-	"image"
-	"image/png"
+	"io"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
-
-	_ "image/jpeg"
-	_ "image/png"
-	"io"
-
-	"github.com/nfnt/resize"
+	"sort"
+	"strings"
+	"time"
 )
 
-type Type struct {
-	Types     map[string]string `json:"types"`
-	Companies map[string]string `json:"companies"`
-}
+var githubUsername = "bacherik"
+var githubRepository = "killedby.json"
+var cacheDir = "cache"
+var cacheDuration = 12 * time.Hour
 
+// Define the structs for JSON data
 type Project struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -31,169 +32,257 @@ type Project struct {
 	DateClose   string `json:"dateClose"`
 }
 
-type Data struct {
-	Projects  []Project
-	Types     map[string]string
+type Company struct {
+	Logo        string    `json:"logo"`
+	Description string    `json:"description"`
+	Projects    []Project `json:"projects"`
+}
+
+type ProjectType struct {
+	Name  string `json:"name"`
+	Color string `json:"color"`
+}
+
+type BasePageData struct {
+	Title     string
 	Companies map[string]string
 }
 
-func main() {
-	typesFile, err := os.ReadFile("types_and_companies.json")
-	if err != nil {
-		log.Fatalf("Error reading types and companies file: %v", err)
-	}
-
-	var types Type
-	err = json.Unmarshal(typesFile, &types)
-	if err != nil {
-		log.Fatalf("Error unmarshaling types and companies JSON: %v", err)
-	}
-
-	data := Data{
-		Types:     types.Types,
-		Companies: types.Companies,
-	}
-
-	// Read company project files
-	for company := range types.Companies {
-		companyProjectsFile := filepath.Join("companies", company+".json")
-		projectsFile, err := os.ReadFile(companyProjectsFile)
-		if err != nil {
-			log.Fatalf("Error reading projects file for company %s: %v", company, err)
-		}
-
-		var companyProjects []Project
-		err = json.Unmarshal(projectsFile, &companyProjects)
-		if err != nil {
-			log.Fatalf("Error unmarshaling projects JSON for company %s: %v", company, err)
-		}
-
-		data.Projects = append(data.Projects, companyProjects...)
-	}
-
-	indexTmpl := template.Must(template.ParseFiles("templates/indexTemplate.html"))
-	projectTmpl := template.Must(template.New("project").Parse(projectTemplate))
-
-	// Create output directory if it doesn't exist
-	err = os.MkdirAll("output", os.ModePerm)
-	if err != nil {
-		log.Fatalf("Error creating output directory: %v", err)
-	}
-
-	// Copy and resize assets to output directory
-	err = copyAndResizeAssets("assets", "output/assets", 100) // Resize to 100px width
-	if err != nil {
-		log.Fatalf("Error copying and resizing assets: %v", err)
-	}
-
-	f, err := os.Create("output/index.html")
-	if err != nil {
-		log.Fatalf("Error creating output file: %v", err)
-	}
-	defer f.Close()
-
-	err = indexTmpl.Execute(f, data)
-	if err != nil {
-		log.Fatalf("Error executing index template: %v", err)
-	}
-
-	for _, project := range data.Projects {
-		companyDir := filepath.Join("output", project.Company)
-		err = os.MkdirAll(companyDir, os.ModePerm)
-		if err != nil {
-			log.Fatalf("Error creating company directory: %v", err)
-		}
-
-		projectFile, err := os.Create(filepath.Join(companyDir, project.Name+".html"))
-		if err != nil {
-			log.Fatalf("Error creating project file: %v", err)
-		}
-		defer projectFile.Close()
-
-		err = projectTmpl.Execute(projectFile, project)
-		if err != nil {
-			log.Fatalf("Error executing project template: %v", err)
-		}
-	}
+type IndexPageData struct {
+	BasePageData
+	Projects []Project
+	Types    map[string]string
 }
 
-func copyAndResizeAssets(src, dst string, width uint) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+type CompanyPageData struct {
+	BasePageData
+	Projects []Project
+	Types    map[string]string
+}
+
+type ProjectPageData struct {
+	BasePageData
+	Project Project
+}
+
+func main() {
+	// URLs for the JSON files and other initial setup
+	companiesURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/main/config/companies.json", githubUsername, githubRepository)
+	typesURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/main/config/types.json", githubUsername, githubRepository)
+
+	// Unmarshal company configs
+	companyConfig := make(map[string]Company)
+	err := fetchJSON(companiesURL, "companies.json", &companyConfig)
+	if err != nil {
+		log.Fatal("Error fetching company config:", err)
+	}
+
+	// Unmarshal project type configs
+	projectTypes := make(map[string]string)
+	err = fetchJSON(typesURL, "types.json", &projectTypes)
+	if err != nil {
+		log.Fatal("Error fetching project type config:", err)
+	}
+
+	// Fetch and unmarshal projects for each company
+	var allProjects []Project
+	for companyName := range companyConfig {
+		projectsURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/main/companies/%s.json", githubUsername, githubRepository, companyName)
+		var projects []Project
+		cacheFileName := fmt.Sprintf("%s.json", companyName)
+		err := fetchJSON(projectsURL, cacheFileName, &projects)
+		if err != nil {
+			log.Fatalf("Error fetching projects for %s: %v", companyName, err)
+		}
+
+		// Add projects to the company in the map
+		company := companyConfig[companyName]
+		company.Projects = projects
+		companyConfig[companyName] = company
+		allProjects = append(allProjects, projects...)
+	}
+
+	// Sort projects by date
+	sort.Slice(allProjects, func(i, j int) bool {
+		return allProjects[i].DateClose > allProjects[j].DateClose
+	})
+
+	funcMap := template.FuncMap{
+		"dict": func(values ...interface{}) (map[string]interface{}, error) {
+			if len(values)%2 != 0 {
+				return nil, errors.New("invalid dict call")
+			}
+			dict := make(map[string]interface{})
+			for i := 0; i < len(values); i += 2 {
+				key, ok := values[i].(string)
+				if !ok {
+					return nil, errors.New("dict keys must be strings")
+				}
+				dict[key] = values[i+1]
+			}
+			return dict, nil
+		},
+	}
+
+	tmpl, err := template.New("").Funcs(funcMap).ParseGlob("templates/*.html")
+	if err != nil {
+		log.Fatalf("Error parsing templates: %v", err)
+	}
+
+	// Handlers
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		pageData := IndexPageData{
+			BasePageData: BasePageData{
+				Title:     "Companies and Projects",
+				Companies: make(map[string]string),
+			},
+			Projects: allProjects,
+			Types:    projectTypes,
+		}
+
+		for companyName, company := range companyConfig {
+			pageData.Companies[companyName] = company.Logo
+		}
+
+		err := tmpl.ExecuteTemplate(w, "index", pageData)
+		if err != nil {
+			log.Printf("Error executing template: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
+	http.HandleFunc("/company/", func(w http.ResponseWriter, r *http.Request) {
+		companyName := strings.TrimPrefix(r.URL.Path, "/company/")
+		company, ok := companyConfig[companyName]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+
+		companyPageData := CompanyPageData{
+			BasePageData: BasePageData{
+				Title:     companyName,
+				Companies: make(map[string]string),
+			},
+			Projects: company.Projects,
+			Types:    projectTypes,
+		}
+
+		for companyName, company := range companyConfig {
+			companyPageData.Companies[companyName] = company.Logo
+		}
+
+		err := tmpl.ExecuteTemplate(w, "company", companyPageData)
+		if err != nil {
+			log.Printf("Error executing template: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
+	http.HandleFunc("/project/", func(w http.ResponseWriter, r *http.Request) {
+		projectPath := strings.TrimPrefix(r.URL.Path, "/project/")
+		parts := strings.SplitN(projectPath, "/", 2)
+		if len(parts) < 2 {
+			http.NotFound(w, r)
+			return
+		}
+
+		companyName, projectName := parts[0], parts[1]
+		company, ok := companyConfig[companyName]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+
+		var project Project
+		found := false
+		for _, p := range company.Projects {
+			if p.Name == projectName {
+				project = p
+				found = true
+				break
+			}
+		}
+		if !found {
+			http.NotFound(w, r)
+			return
+		}
+
+		projectPageData := ProjectPageData{
+			BasePageData: BasePageData{
+				Title:     projectName,
+				Companies: make(map[string]string),
+			},
+			Project: project,
+		}
+
+		for companyName, company := range companyConfig {
+			projectPageData.Companies[companyName] = company.Logo
+		}
+
+		err := tmpl.ExecuteTemplate(w, "project", projectPageData)
+		if err != nil {
+			log.Printf("Error executing template: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
+	fmt.Println("Starting server at :8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func fetchJSON(url, cacheFileName string, v interface{}) error {
+	// Create cache directory if it doesn't exist
+	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+		err := os.Mkdir(cacheDir, 0755)
 		if err != nil {
 			return err
 		}
-		relPath := path[len(src):]
-		targetPath := filepath.Join(dst, relPath)
-		if info.IsDir() {
-			return os.MkdirAll(targetPath, info.Mode())
-		} else {
-			if filepath.Ext(path) == ".png" || filepath.Ext(path) == ".jpg" || filepath.Ext(path) == ".jpeg" {
-				return resizeImage(path, targetPath, width)
+	}
+
+	cacheFilePath := filepath.Join(cacheDir, cacheFileName)
+
+	// Check if the cached file exists and is still valid
+	if info, err := os.Stat(cacheFilePath); err == nil {
+		if time.Since(info.ModTime()) < cacheDuration {
+			// Read from the cached file
+			bytes, err := ioutil.ReadFile(cacheFilePath)
+			if err != nil {
+				return err
 			}
-			return copyFile(path, targetPath)
+			return json.Unmarshal(bytes, v)
 		}
-	})
+	}
+
+	fmt.Print("Fetching ", url, "... ")
+
+	// Fetch from the URL
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	bytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	// Unmarshal the JSON data
+	err = json.Unmarshal(bytes, v)
+	if err != nil {
+		return err
+	}
+
+	// Write the data to the cache file
+	err = ioutil.WriteFile(cacheFilePath, bytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
-
-func resizeImage(src, dst string, width uint) error {
-	file, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return err
-	}
-
-	m := resize.Resize(width, 0, img, resize.Lanczos3)
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	return png.Encode(out, m)
-}
-
-func copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer sourceFile.Close()
-
-	destFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-
-	_, err = io.Copy(destFile, sourceFile)
-	return err
-}
-
-const projectTemplate = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ .Name }}</title>
-    <link rel="stylesheet" href="/assets/css/custom.css">
-</head>
-<body>
-    <header>
-        <h1>{{ .Name }}</h1>
-    </header>
-    <main>
-        <p>{{ .Description }}</p>
-        <p><a href="{{ .Link }}">{{ .Link }}</a></p>
-        <p>Opened: {{ .DateOpen }} Closed: {{ .DateClose }}</p>
-    </main>
-    <footer>
-        <p>&copy; 2024 {{ .Company }}</p>
-    </footer>
-</body>
-</html>`

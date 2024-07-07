@@ -1,0 +1,38 @@
+{{ define "project" }}
+{{ template "header" . }}
+<div class="project-container">
+    <h1>{{ .Project.Name }}</h1>
+    <div class="project-info">
+        <p><strong>Description:</strong> {{ .Project.Description }}</p>
+        <p><strong>Released:</strong> {{ .Project.DateOpen }}</p>
+        <p><strong>Discontinued:</strong> {{ .Project.DateClose }}</p>
+        <p><strong>Company:</strong> {{ .Project.Company }}</p>
+        <p><strong>Source:</strong> <a href="{{ .Project.Link }}" target="_blank">{{ .Project.Link }}</a></p>
+    </div>
+</div>
+{{ template "footer" . }}
+<style>
+    .project-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        background-color: #1e1e1e;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .project-info {
+        margin-top: 20px;
+    }
+    .project-info p {
+        margin: 10px 0;
+        color: #e0e0e0;
+        line-height: 1.6;
+    }
+    .project-info a {
+        color: #bb86fc;
+    }
+    .project-info a:hover {
+        text-decoration: underline;
+    }
+</style>
+{{ end }}

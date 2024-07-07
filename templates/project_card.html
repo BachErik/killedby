@@ -1,0 +1,19 @@
+{{ define "project_card" }}
+<div class="card">
+    <a href="/project/{{ .Project.Company }}/{{ .Project.Name }}" class="card-link">
+        <img class="company-logo" src="{{ index .Companies .Project.Company }}" alt="{{ .Project.Company }} logo">
+        <h3>{{ .Project.Name }}</h3>
+        <p class="description">
+            {{ if gt (len .Project.Description) 100 }}
+                {{ slice .Project.Description 0 100 }}...
+            {{ else }}
+                {{ .Project.Description }}
+            {{ end }}
+        </p>
+        <div class="tags">
+            <span class="tag" style="background-color: #444;">{{ .Project.DateOpen }} - {{ .Project.DateClose }}</span>
+            <span class="tag" style="background-color: {{ index .Types .Project.Type }}; color: #f0f0f0;">{{ .Project.Type }}</span>
+        </div>
+    </a>
+</div>
+{{ end }}

@@ -1,0 +1,10 @@
+{{ define "index" }}
+{{ template "header" . }}
+<h1>Projects</h1>
+<div class="cards">
+    {{ range .Projects }}
+        {{ template "project_card" dict "Project" . "Companies" $.Companies "Types" $.Types }}
+    {{ end }}
+</div>
+{{ template "footer" . }}
+{{ end }}
