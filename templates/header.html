@@ -4,11 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Killed by *</title>
+    <title>{{ .Title }}</title>
 </head>
 <body>
     <header>
-        <h1>Killed by *</h1>
+        <h2>Companies</h2>
+        <ul>
+            {{ range $company, $logo := .Companies }}
+            <li><a href="/company/{{ $company }}"><img src="{{ $logo }}" alt="{{ $company }}" /></a></li>
+            {{ end }}
+        </ul>
     </header>
     <main>
 {{ end }}

@@ -1,16 +1,10 @@
 {{ define "index" }}
 {{ template "header" . }}
-<h1>Companies</h1>
-<ul>
-    {{ range $company, $logo := .Companies }}
-    <li><a href="{{ $company }}/"><img src="{{ $logo }}" alt="{{ $company }}" /></a></li>
-    {{ end }}
-</ul>
 <h1>Projects</h1>
 <ul>
     {{ range .Projects }}
     <li>
-        <a href="{{ .Company }}/{{ .Name }}.html" style="color: {{ index $.Types .Type }}">
+        <a href="/project/{{ .Company }}/{{ .Name }}" style="color: {{ index $.Types .Type }}">
             {{ .Name }}
         </a> - {{ .Description }}
         <br>

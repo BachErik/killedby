@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -40,10 +41,26 @@ type ProjectType struct {
 	Color string `json:"color"`
 }
 
-type PageData struct {
+type BasePageData struct {
+	Title     string
 	Companies map[string]string
-	Projects  []Project
-	Types     map[string]string
+}
+
+type IndexPageData struct {
+	BasePageData
+	Projects []Project
+	Types    map[string]string
+}
+
+type CompanyPageData struct {
+	BasePageData
+	Projects []Project
+	Types    map[string]string
+}
+
+type ProjectPageData struct {
+	BasePageData
+	Project Project
 }
 
 func main() {
@@ -83,26 +100,104 @@ func main() {
 		allProjects = append(allProjects, projects...)
 	}
 
-	// Prepare the data for the template
-	pageData := PageData{
-		Companies: make(map[string]string),
-		Projects:  allProjects,
-		Types:     projectTypes,
-	}
-
-	for companyName, company := range companyConfig {
-		pageData.Companies[companyName] = company.Logo
-	}
-
 	// Parse the templates from the templates folder
 	tmpl, err := template.ParseGlob("templates/*.html")
 	if err != nil {
 		log.Fatalf("Error parsing templates: %v", err)
 	}
 
-	// Start the web server
+	// Handlers
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		pageData := IndexPageData{
+			BasePageData: BasePageData{
+				Title:     "Companies and Projects",
+				Companies: make(map[string]string),
+			},
+			Projects: allProjects,
+			Types:    projectTypes,
+		}
+
+		for companyName, company := range companyConfig {
+			pageData.Companies[companyName] = company.Logo
+		}
+
 		err := tmpl.ExecuteTemplate(w, "index", pageData)
+		if err != nil {
+			log.Printf("Error executing template: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
+	http.HandleFunc("/company/", func(w http.ResponseWriter, r *http.Request) {
+		companyName := strings.TrimPrefix(r.URL.Path, "/company/")
+		company, ok := companyConfig[companyName]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+
+		companyPageData := CompanyPageData{
+			BasePageData: BasePageData{
+				Title:     companyName,
+				Companies: make(map[string]string),
+			},
+			Projects: company.Projects,
+			Types:    projectTypes,
+		}
+
+		for companyName, company := range companyConfig {
+			companyPageData.Companies[companyName] = company.Logo
+		}
+
+		err := tmpl.ExecuteTemplate(w, "company", companyPageData)
+		if err != nil {
+			log.Printf("Error executing template: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
+	http.HandleFunc("/project/", func(w http.ResponseWriter, r *http.Request) {
+		projectPath := strings.TrimPrefix(r.URL.Path, "/project/")
+		parts := strings.SplitN(projectPath, "/", 2)
+		if len(parts) < 2 {
+			http.NotFound(w, r)
+			return
+		}
+
+		companyName, projectName := parts[0], parts[1]
+		company, ok := companyConfig[companyName]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+
+		var project Project
+		found := false
+		for _, p := range company.Projects {
+			if p.Name == projectName {
+				project = p
+				found = true
+				break
+			}
+		}
+		if !found {
+			http.NotFound(w, r)
+			return
+		}
+
+		projectPageData := ProjectPageData{
+			BasePageData: BasePageData{
+				Title:     projectName,
+				Companies: make(map[string]string),
+			},
+			Project: project,
+		}
+
+		for companyName, company := range companyConfig {
+			projectPageData.Companies[companyName] = company.Logo
+		}
+
+		err := tmpl.ExecuteTemplate(w, "project", projectPageData)
 		if err != nil {
 			log.Printf("Error executing template: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)

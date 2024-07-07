@@ -4,7 +4,7 @@
 <ul>
     {{ range .Projects }}
     <li>
-        <a href="{{ .Company }}/{{ .Name }}.html" style="color: {{ index $.Types .Type }}">
+        <a href="/project/{{ .Company }}/{{ .Name }}" style="color: {{ index $.Types .Type }}">
             {{ .Name }}
         </a> - {{ .Description }}
         <br>
