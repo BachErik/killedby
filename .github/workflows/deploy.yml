@@ -6,46 +6,35 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v4
       with:
-        go-version: '^1.17'
+        go-version: '1.18'  # Adjust to the version of Go you are using
 
-    - name: Build static content
-      run: go run ./main.go
+    - name: Install dependencies
+      run: go mod tidy
 
-    - name: Upload HTML artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: static-content
-        path: ./index.html
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-    permissions:
-      pages: write      # to deploy to Pages
-      id-token: write   # to verify the deployment originates from an appropriate source
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Download HTML artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: static-content
+    - name: Build static site
+      run: go run main.go
 
     - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v1
+      uses: peaceiris/actions-gh-pages@v4
+      # If you're changing the branch from main,
+      # also change the `main` in `refs/heads/main`
+      # below accordingly.
+      if: github.ref == 'refs/heads/main'
       with:
-        artifact_name: "static-content"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./output
