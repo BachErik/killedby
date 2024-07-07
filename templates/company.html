@@ -1,0 +1,16 @@
+{{ define "company" }}
+{{ template "header" . }}
+<h1>Projects by {{ .Title }}</h1>
+<ul>
+    {{ range .Projects }}
+    <li>
+        <a href="{{ .Company }}/{{ .Name }}.html" style="color: {{ index $.Types .Type }}">
+            {{ .Name }}
+        </a> - {{ .Description }}
+        <br>
+        {{ .DateOpen }} - {{ .DateClose }}
+    </li>
+    {{ end }}
+</ul>
+{{ template "footer" . }}
+{{ end }}
