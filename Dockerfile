@@ -4,6 +4,10 @@ FROM golang:1.22.5-alpine
 # Set the working directory inside the container
 WORKDIR /app
 
+# Set environment variables
+ENV GITHUB_USERNAME=bacherik
+ENV GITHUB_REPOSITORY=killedby.json
+
 # Copy the go.mod and go.sum files into the working directory
 COPY go.mod go.sum ./
 

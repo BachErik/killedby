@@ -15,8 +15,8 @@ import (
 	"time"
 )
 
-var githubUsername = "bacherik"
-var githubRepository = "killedby.json"
+var githubUsername = os.Getenv("GITHUB_USERNAME")
+var githubRepository = os.Getenv("GITHUB_REPOSITORY")
 var cacheDir = "cache"
 var cacheDuration = 12 * time.Hour
 
