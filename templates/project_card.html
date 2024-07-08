@@ -1,16 +1,12 @@
 {{ define "project_card" }}
-<div class="card">
+<div class="card" style="background-color: {{ if isFutureDate .Project.DateClose }}#293033{{ else }}#1e1e1e{{ end }};">
     <a href="/project/{{ .Project.Company }}/{{ .Project.Name }}" class="card-link">
         <div class="card-logo-container">
             <img class="card-logo" src="{{ index .Companies .Project.Company }}" alt="{{ .Project.Company }} logo">
         </div>
         <h3>{{ .Project.Name }}</h3>
         <p class="description">
-            {{ if gt (len .Project.Description) 100 }}
-                {{ slice .Project.Description 0 100 }}...
-            {{ else }}
-                {{ .Project.Description }}
-            {{ end }}
+            {{ .Project.Description }}
         </p>
         <div class="tags">
             <span class="tag" style="background-color: #444;">{{ .Project.DateOpen }} - {{ .Project.DateClose }}</span>
@@ -21,17 +17,29 @@
 <style>
     .card-logo-container {
         display: flex;
-        justify-content: center; /* Center horizontally */
-        align-items: center; /* Center vertically */
-        width: 100%; /* Full width of the card */
-        height: 100px; /* Adjust as needed for the card */
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100px;
     }
     .card-logo {
-        max-width: 100%; /* Ensure the image scales */
-        max-height: 100%; /* Ensure the image scales */
-        height: auto; /* Maintain aspect ratio */
-        width: auto; /* Maintain aspect ratio */
-        object-fit: contain; /* Ensure the image fits within the dimensions while maintaining aspect ratio */
+        max-width: 100%;
+        max-height: 100%;
+        height: auto;
+        width: auto;
+        object-fit: contain;
+    }
+    .description {
+        display: -webkit-box;
+        display: box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-height: 4.5em; /* Adapt based on actual line-height to display three lines */
+        line-height: 1.5em; /* Assuming a line height of 1.5em for this calculation */
     }
 </style>
 {{ end }}

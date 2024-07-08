@@ -146,6 +146,7 @@ func main() {
 			}
 			return dict, nil
 		},
+		"isFutureDate": isFutureDate,
 	}
 
 	tmpl, err := template.New("").Funcs(funcMap).ParseGlob("templates/*.html")
@@ -326,4 +327,15 @@ func fetchJSON(url, cacheFileName string, v interface{}) error {
 	}
 
 	return nil
+}
+
+// isFutureDate checks if the given date string is in the future.
+func isFutureDate(dateStr string) bool {
+	layout := "2006-01-02" // Adjust this layout as necessary to match the date format
+	date, err := time.Parse(layout, dateStr)
+	if err != nil {
+		log.Printf("Error parsing date: %v", err)
+		return false
+	}
+	return date.After(time.Now())
 }
