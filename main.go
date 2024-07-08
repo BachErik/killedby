@@ -162,6 +162,7 @@ func main() {
 				Companies: make(map[string]string),
 			},
 			YearsProjects: yearsProjects, // Using the grouped projects by year
+			Types:         projectTypes,
 		}
 
 		for companyName, company := range companyConfig {
