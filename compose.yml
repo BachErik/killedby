@@ -1,0 +1,16 @@
+services:
+  killedby:
+    image: bacherik/killedby:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - GITHUB_USERNAME=bacherik
+      - GITHUB_REPOSITORY=killedby.json
+    restart: always
+
+networks:
+  default:
+    driver: bridge
