@@ -41,5 +41,20 @@
         max-height: 4.5em; /* Adapt based on actual line-height to display three lines */
         line-height: 1.5em; /* Assuming a line height of 1.5em for this calculation */
     }
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px; /* Adds a gap between tags */
+    }
+    .tag {
+        display: inline-flex;
+        background-color: #333;
+        border-radius: 20px;
+        padding: 5px 15px;
+        color: #e0e0e0;
+        font-size: 0.85em;
+        margin: 2px; /* Ensures small spacing around each tag */
+        white-space: nowrap; /* Prevents tags from breaking into multiple lines */
+    }
 </style>
 {{ end }}
