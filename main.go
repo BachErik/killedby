@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"image"
+	"image/png"
 	"io"
 	"log"
 	"net/http"
@@ -13,6 +15,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/fogleman/gg"
 )
 
 var githubUsername = os.Getenv("GITHUB_USERNAME")
@@ -160,6 +164,10 @@ func main() {
 
 	// Handlers
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		scheme := "http"
+		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+			scheme = "https"
+		}
 		pageData := IndexPageData{
 			BasePageData: BasePageData{
 				Title:     "Projects by Year",
@@ -167,7 +175,7 @@ func main() {
 				// Adding Open Graph properties
 				OGTitle:       "Killed by - Home",
 				OGUrl:         getFullURL(r),
-				OGImage:       "http://example.com/default-image.jpg",
+				OGImage:       scheme + "://" + r.Host + "/og/home",
 				OGDescription: "Explore discontinued projects and their histories.",
 			},
 			YearsProjects: yearsProjects, // Using the grouped projects by year
@@ -186,6 +194,10 @@ func main() {
 	})
 
 	http.HandleFunc("/company/", func(w http.ResponseWriter, r *http.Request) {
+		scheme := "http"
+		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+			scheme = "https"
+		}
 		companyName := strings.TrimPrefix(r.URL.Path, "/company/")
 		company, ok := companyConfig[companyName]
 		if !ok {
@@ -218,7 +230,7 @@ func main() {
 				// Adding Open Graph properties
 				OGTitle:       "Killed by - " + companyName,
 				OGUrl:         getFullURL(r),
-				OGImage:       "http://example.com/default-image.jpg",
+				OGImage:       scheme + "://" + r.Host + "/og/" + r.RequestURI,
 				OGDescription: "Explore discontinued projects and their histories.",
 			},
 			YearsProjects: yearsProjects, // Use grouped projects by year
@@ -237,6 +249,10 @@ func main() {
 	})
 
 	http.HandleFunc("/project/", func(w http.ResponseWriter, r *http.Request) {
+		scheme := "http"
+		if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+			scheme = "https"
+		}
 		projectPath := strings.TrimPrefix(r.URL.Path, "/project/")
 		parts := strings.SplitN(projectPath, "/", 2)
 		if len(parts) < 2 {
@@ -272,11 +288,13 @@ func main() {
 				// Adding Open Graph properties
 				OGTitle:       "Killed by - " + projectName,
 				OGUrl:         getFullURL(r),
-				OGImage:       "http://example.com/default-image.jpg",
+				OGImage:       scheme + "://" + r.Host + "/og/" + r.RequestURI,
 				OGDescription: "Explore discontinued projects and their histories.",
 			},
 			Project: project,
 		}
+
+		http.HandleFunc("/og/", ogImageHandler)
 
 		for companyName, company := range companyConfig {
 			projectPageData.Companies[companyName] = company.Logo
@@ -368,4 +386,49 @@ func getFullURL(r *http.Request) string {
 		scheme = "https"
 	}
 	return fmt.Sprintf("%s://%s%s", scheme, r.Host, r.RequestURI)
+}
+
+func generateImage(text string) image.Image {
+	const W = 1200
+	const H = 630
+	dc := gg.NewContext(W, H)
+	dc.SetRGB(0, 0, 0) // Set background color
+	dc.Clear()
+	dc.SetRGB(1, 1, 1)                       // Set text color
+	dc.LoadFontFace("/path/to/font.ttf", 48) // Load your font
+	dc.DrawStringAnchored(text, float64(W)/2, float64(H)/2, 0.5, 0.5)
+	return dc.Image()
+}
+
+func ogImageHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract the path after /og/
+	path := strings.TrimPrefix(r.URL.Path, "/og/")
+	if path == "" {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	// Decide what text to display based on the 'path'
+	text := generateTextForOGImage(path)
+
+	// Generate the image
+	img := generateImage(text) // Implement this function to generate an image based on the text
+
+	// Set the header and write the image
+	w.Header().Set("Content-Type", "image/png")
+	if err := png.Encode(w, img); err != nil {
+		http.Error(w, "Failed to encode image", http.StatusInternalServerError)
+	}
+}
+
+func generateTextForOGImage(path string) string {
+	// Simple routing logic based on path
+	if strings.HasPrefix(path, "company/") {
+		return "Information about " + strings.TrimPrefix(path, "company/")
+	} else if strings.HasPrefix(path, "project/") {
+		return "Details of project " + strings.TrimPrefix(path, "project/")
+	} else if strings.HasPrefix(path, "home/") {
+		return "Killed by - Explore discontinued projects"
+	}
+	return "Killed by - Explore discontinued projects"
 }
