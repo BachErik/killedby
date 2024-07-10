@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .Title }}</title>
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="{{ .OGTitle }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ .OGUrl }}">
+    <meta property="og:image" content="{{ .OGImage }}">
+    <meta property="og:description" content="{{ .OGDescription }}">
+    <meta property="og:site_name" content="Killed by">
     <style>
         body {
             background-color: #121212;

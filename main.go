@@ -43,8 +43,12 @@ type ProjectType struct {
 }
 
 type BasePageData struct {
-	Title     string
-	Companies map[string]string
+	Title         string
+	Companies     map[string]string
+	OGTitle       string // Open Graph title
+	OGUrl         string // Open Graph URL
+	OGImage       string // Open Graph image URL
+	OGDescription string // Open Graph description
 }
 
 type YearProjects struct {
@@ -160,6 +164,11 @@ func main() {
 			BasePageData: BasePageData{
 				Title:     "Projects by Year",
 				Companies: make(map[string]string),
+				// Adding Open Graph properties
+				OGTitle:       "Killed by - Home",
+				OGUrl:         getFullURL(r),
+				OGImage:       "http://example.com/default-image.jpg",
+				OGDescription: "Explore discontinued projects and their histories.",
 			},
 			YearsProjects: yearsProjects, // Using the grouped projects by year
 			Types:         projectTypes,
@@ -206,6 +215,11 @@ func main() {
 			BasePageData: BasePageData{
 				Title:     companyName,
 				Companies: make(map[string]string),
+				// Adding Open Graph properties
+				OGTitle:       "Killed by - " + companyName,
+				OGUrl:         getFullURL(r),
+				OGImage:       "http://example.com/default-image.jpg",
+				OGDescription: "Explore discontinued projects and their histories.",
 			},
 			YearsProjects: yearsProjects, // Use grouped projects by year
 			Types:         projectTypes,
@@ -255,6 +269,11 @@ func main() {
 			BasePageData: BasePageData{
 				Title:     projectName,
 				Companies: make(map[string]string),
+				// Adding Open Graph properties
+				OGTitle:       "Killed by - " + projectName,
+				OGUrl:         getFullURL(r),
+				OGImage:       "http://example.com/default-image.jpg",
+				OGDescription: "Explore discontinued projects and their histories.",
 			},
 			Project: project,
 		}
@@ -339,4 +358,14 @@ func isFutureDate(dateStr string) bool {
 		return false
 	}
 	return date.After(time.Now())
+}
+
+// getFullURL returns the full URL from the given http.Request object.
+func getFullURL(r *http.Request) string {
+	// Check if the request is made over HTTPS
+	scheme := "http"
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+		scheme = "https"
+	}
+	return fmt.Sprintf("%s://%s%s", scheme, r.Host, r.RequestURI)
 }
