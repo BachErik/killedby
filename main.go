@@ -231,7 +231,7 @@ func main() {
 				OGTitle:       "Killed by - " + companyName,
 				OGUrl:         getFullURL(r),
 				OGImage:       scheme + "://" + r.Host + "/og/" + r.RequestURI,
-				OGDescription: "Explore discontinued projects and their histories.",
+				OGDescription: company.Description,
 			},
 			YearsProjects: yearsProjects, // Use grouped projects by year
 			Types:         projectTypes,
@@ -286,15 +286,13 @@ func main() {
 				Title:     projectName,
 				Companies: make(map[string]string),
 				// Adding Open Graph properties
-				OGTitle:       "Killed by - " + projectName,
+				OGTitle:       projectName + "is a " + project.Type + " being killed by " + companyName + " in " + strings.Split(project.DateClose, "-")[0],
 				OGUrl:         getFullURL(r),
 				OGImage:       scheme + "://" + r.Host + "/og/" + r.RequestURI,
-				OGDescription: "Explore discontinued projects and their histories.",
+				OGDescription: project.Description,
 			},
 			Project: project,
 		}
-
-		http.HandleFunc("/og/", ogImageHandler)
 
 		for companyName, company := range companyConfig {
 			projectPageData.Companies[companyName] = company.Logo
