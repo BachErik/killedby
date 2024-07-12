@@ -9,6 +9,7 @@ import (
 	"image/png"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -19,6 +20,7 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/srwiley/oksvg"
 	"github.com/srwiley/rasterx"
+	"golang.org/x/image/draw"
 	// Import a package that can handle SVG to PNG conversion.
 )
 
@@ -417,6 +419,9 @@ func downloadImage(url string) (image.Image, error) {
 func generateSimpleImage(text string, logoURL string, description string) image.Image {
 	const W = 1200
 	const H = 630
+	const LogoMaxWidth = 300
+	const LogoMaxHeight = 150
+
 	dc := gg.NewContext(W, H)
 	dc.SetRGB(0, 0, 0) // Set background color
 	dc.Clear()
@@ -435,13 +440,35 @@ func generateSimpleImage(text string, logoURL string, description string) image.
 	if logoURL != "" {
 		logo, err := downloadImage(logoURL)
 		if err == nil {
-			dc.DrawImageAnchored(logo, W/2, 3*H/4, 0.5, 0.5)
+			// Calculate scaling factor to fit the logo within the maximum dimensions if necessary
+			scaleWidth := float64(LogoMaxWidth) / float64(logo.Bounds().Dx())
+			scaleHeight := float64(LogoMaxHeight) / float64(logo.Bounds().Dy())
+			scale := math.Min(scaleWidth, scaleHeight)
+
+			// If the logo is larger than the max dimensions, scale it down
+			if scale < 1 {
+				logoWidth := float64(logo.Bounds().Dx()) * scale
+				logoHeight := float64(logo.Bounds().Dy()) * scale
+
+				dc.DrawImageAnchored(resizeImage(logo, int(logoWidth), int(logoHeight)), W/2, 3*H/4, 0.5, 0.5)
+			} else {
+				// If no scaling is needed, draw the logo at original size
+				dc.DrawImageAnchored(logo, W/2, 3*H/4, 0.5, 0.5)
+			}
 		} else {
 			log.Printf("Error downloading logo: %v", err)
 		}
 	}
 
 	return dc.Image()
+}
+
+// Helper function to resize an image while maintaining aspect ratio
+func resizeImage(img image.Image, width int, height int) image.Image {
+	rect := image.Rect(0, 0, width, height)
+	dst := image.NewRGBA(rect)
+	draw.BiLinear.Scale(dst, rect, img, img.Bounds(), draw.Over, nil)
+	return dst
 }
 
 // Handler for generating Open Graph images
