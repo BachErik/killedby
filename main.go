@@ -154,6 +154,17 @@ func main() {
 		"isFutureDate": isFutureDate,
 	}
 
+	// Fetch custom footer if available
+	customFooter, err := fetchCustomFooter()
+	if err == nil {
+		err = os.WriteFile("templates/footer.html", []byte(customFooter), 0644)
+		if err != nil {
+			log.Printf("Error writing custom footer: %v", err)
+		}
+	} else {
+		log.Printf("Using default footer: %v", err)
+	}
+
 	tmpl, err := template.New("").Funcs(funcMap).ParseGlob("templates/*.html")
 	if err != nil {
 		log.Fatalf("Error parsing templates: %v", err)
@@ -166,6 +177,26 @@ func main() {
 
 	fmt.Println("Starting server at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func fetchCustomFooter() (string, error) {
+	customFooterURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/main/templates/footer.html", githubUsername, githubRepository)
+	resp, err := http.Get(customFooterURL)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("custom footer not found")
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
 }
 
 func indexHandler(tmpl *template.Template) http.HandlerFunc {

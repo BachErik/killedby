@@ -1,8 +1,85 @@
 {{ define "footer" }}
     </main>
     <footer>
-        <p>&copy; 2024 Killed by *</p>
+        <div class="footer-content">
+            <div class="footer-links">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                    <li><a href="/privacy">Privacy Policy</a></li>
+                    <li><a href="/terms">Terms of Service</a></li>
+                </ul>
+            </div>
+            <div class="footer-social">
+                <h3>Follow Us</h3>
+                <ul>
+                    <li><a href="https://twitter.com/yourprofile" target="_blank">Twitter</a></li>
+                    <li><a href="https://facebook.com/yourprofile" target="_blank">Facebook</a></li>
+                    <li><a href="https://instagram.com/yourprofile" target="_blank">Instagram</a></li>
+                    <li><a href="https://linkedin.com/in/yourprofile" target="_blank">LinkedIn</a></li>
+                </ul>
+            </div>
+            <div class="footer-contact">
+                <h3>Contact Us</h3>
+                <p>Email: <a href="mailto:support@killedby.com">support@killedby.com</a></p>
+                <p>Phone: (123) 456-7890</p>
+                <p>Address: 123 Main St, Anytown, USA</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Killed by *</p>
+        </div>
     </footer>
-</body>
-</html>
+    <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            flex: 1;
+        }
+        footer {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            padding: 20px;
+            box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .footer-links, .footer-social, .footer-contact {
+            margin: 20px;
+        }
+        .footer-links ul, .footer-social ul {
+            list-style: none;
+            padding: 0;
+        }
+        .footer-links ul li, .footer-social ul li {
+            margin: 10px 0;
+        }
+        .footer-links a, .footer-social a {
+            color: #bb86fc;
+            text-decoration: none;
+        }
+        .footer-links a:hover, .footer-social a:hover {
+            text-decoration: underline;
+        }
+        .footer-bottom {
+            margin-top: 20px;
+        }
+    </style>
 {{ end }}
