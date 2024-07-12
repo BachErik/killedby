@@ -418,7 +418,7 @@ func downloadImage(url string) (image.Image, error) {
 
 func generateSimpleImage(text string, logoURL string, description string) image.Image {
 	const W = 1200
-	const H = 630
+	const H = 628
 	const LogoMaxWidth = 300
 	const LogoMaxHeight = 150
 
@@ -526,7 +526,7 @@ func ogImageHandler(w http.ResponseWriter, r *http.Request) {
 // generateHomePageImage creates a generic image for the home page
 func generateHomePageImage() image.Image {
 	const W = 1200
-	const H = 630
+	const H = 628
 	dc := gg.NewContext(W, H)
 	dc.SetRGB(0.9, 0.9, 0.9) // Light grey background
 	dc.Clear()
@@ -541,7 +541,7 @@ func generateHomePageImage() image.Image {
 
 func generateDetailedImage(project Project) image.Image {
 	const W = 1200
-	const H = 630
+	const H = 628
 	dc := gg.NewContext(W, H)
 
 	// Set background and text colors
