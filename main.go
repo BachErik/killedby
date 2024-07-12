@@ -23,8 +23,8 @@ import (
 )
 
 var (
-	githubUsername   = "bacherik"
-	githubRepository = "killedby.json"
+	githubUsername   = os.Getenv("GITHUB_USERNAME")
+	githubRepository = os.Getenv("GITHUB_REPOSITORY")
 	cacheDir         = "cache"
 	cacheDuration    = 12 * time.Hour
 	companyConfig    = make(map[string]Company)
