@@ -414,7 +414,7 @@ func downloadImage(url string) (image.Image, error) {
 	}
 }
 
-func generateImage(text string, logoURL string, description string) image.Image {
+func generateSimpleImage(text string, logoURL string, description string) image.Image {
 	const W = 1200
 	const H = 630
 	dc := gg.NewContext(W, H)
@@ -444,6 +444,7 @@ func generateImage(text string, logoURL string, description string) image.Image 
 	return dc.Image()
 }
 
+// Handler for generating Open Graph images
 func ogImageHandler(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/og/")
 	if path == "" {
@@ -451,28 +452,130 @@ func ogImageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	text, logoURL, description := generateTextForOGImage(path)
+	var img image.Image
 
-	img := generateImage(text, logoURL, description)
+	// Handle different types of OG paths
+	switch {
+	case path == "home":
+		// Generate a default image for the home page
+		img = generateHomePageImage()
+	case strings.HasPrefix(path, "company/"):
+		companyName := strings.TrimPrefix(path, "company/")
+		company, ok := companyConfig[companyName]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		img = generateSimpleImage("Explore projects by "+companyName, company.Logo, company.Description)
+	case strings.HasPrefix(path, "project/"):
+		parts := strings.SplitN(path[len("project/"):], "/", 2)
+		if len(parts) < 2 {
+			http.NotFound(w, r)
+			return
+		}
+		company, ok := companyConfig[parts[0]]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		project, ok := findProjectByName(company.Projects, parts[1])
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		img = generateDetailedImage(project)
+	default:
+		http.NotFound(w, r)
+		return
+	}
 
+	// Encode and write the image as PNG to the response
 	w.Header().Set("Content-Type", "image/png")
 	if err := png.Encode(w, img); err != nil {
 		http.Error(w, "Failed to encode image", http.StatusInternalServerError)
 	}
 }
 
-func generateTextForOGImage(path string) (string, string, string) {
-	if strings.HasPrefix(path, "company/") {
-		companyName := strings.TrimPrefix(path, "company/")
-		company, ok := companyConfig[companyName]
-		if ok {
-			return "Killed by - " + companyName, company.Logo, company.Description
-		}
-		return "Company Not Found", "", ""
-	} else if strings.HasPrefix(path, "project/") {
-		return "Details of project " + strings.TrimPrefix(path, "project/"), "", ""
-	} else if strings.HasPrefix(path, "home/") {
-		return "Killed by - Explore discontinued projects", "", ""
+// generateHomePageImage creates a generic image for the home page
+func generateHomePageImage() image.Image {
+	const W = 1200
+	const H = 630
+	dc := gg.NewContext(W, H)
+	dc.SetRGB(0.9, 0.9, 0.9) // Light grey background
+	dc.Clear()
+
+	dc.SetRGB(0, 0, 0)                                                // Black text
+	dc.LoadFontFace("./classic-stroke/ClassicStroke-Texture.ttf", 48) // Adjust path and size as needed
+	dc.DrawStringAnchored("Welcome to Killed by", W/2, H/3, 0.5, 0.5)
+	dc.DrawStringAnchored("Explore the lifecycle of discontinued projects", W/2, H*2/3, 0.5, 0.5)
+
+	return dc.Image()
+}
+
+func generateDetailedImage(project Project) image.Image {
+	const W = 1200
+	const H = 630
+	dc := gg.NewContext(W, H)
+
+	// Set background and text colors
+	dc.SetRGB(1, 1, 1) // White background for clarity
+	dc.Clear()
+	dc.SetRGB(0, 0, 0) // Black text for visibility
+
+	// Load and set font
+	fontPath := "./classic-stroke/ClassicStroke-Texture.ttf"
+	if err := dc.LoadFontFace(fontPath, 24); err != nil {
+		log.Fatalf("Error loading font: %v", err)
 	}
-	return "Killed by - Explore discontinued projects", "", ""
+
+	// Initialize y-coordinate for text placement
+	y := 50.0
+
+	// Function to draw text with wrapping
+	drawText := func(text string, wrapWidth float64) {
+		lines := dc.WordWrap(text, wrapWidth)
+		for _, line := range lines {
+			dc.DrawString(line, 50, y)
+			y += 30 // Increment y-coordinate for the next line
+		}
+		y += 20 // Add extra space after a block of text
+	}
+
+	// Draw each piece of information
+	drawText(fmt.Sprintf("Project: %s", project.Name), W-100)
+	drawText(fmt.Sprintf("Description: %s", project.Description), W-100)
+	drawText(fmt.Sprintf("Developer/Company: %s", project.Company), W-100)
+	drawText(fmt.Sprintf("Released: %s - Discontinued: %s", project.DateOpen, project.DateClose), W-100)
+
+	// Calculate and display lifespan
+	lifespan := calculateLifespan(project.DateOpen, project.DateClose)
+	drawText(fmt.Sprintf("Lifespan: %s years", lifespan), W-100)
+
+	// Type with color
+	typeColor := projectTypes[project.Type] // Ensure this map is well-defined in your application
+	dc.SetHexColor(typeColor)
+	dc.DrawStringWrapped("Type: "+project.Type, 50, y, 0, 0, W-100, 1.5, gg.AlignLeft)
+	y += 40
+
+	// Reset color for any additional text
+	dc.SetRGB(0, 0, 0)
+
+	return dc.Image()
+}
+
+func calculateLifespan(start, end string) string {
+	startDate, _ := time.Parse("2006-01-02", start)
+	endDate, _ := time.Parse("2006-01-02", end)
+	lifespan := endDate.Sub(startDate).Hours() / 24 / 365
+	return fmt.Sprintf("%.2f", lifespan)
+}
+
+// Helper function to find a project by name within a slice of projects
+func findProjectByName(projects []Project, name string) (Project, bool) {
+	for _, project := range projects {
+		if project.Name == name {
+			return project, true
+		}
+	}
+	return Project{}, false
 }
