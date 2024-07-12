@@ -1,10 +1,13 @@
 {{ define "header" }}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ .Title }}</title>
+    <meta name="title" content="{{ .OGTitle }}" />
+    <meta name="description" content="{{ .OGDescription }}" />
     <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="{{ .OGTitle }}">
     <meta property="og:type" content="website">
@@ -13,6 +16,12 @@
     <meta property="og:description" content="{{ .OGDescription }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="628">
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="{{ .OGUrl }}" />
+    <meta property="twitter:title" content="{{ .OGTitle }}" />
+    <meta property="twitter:description" content="{{ .OGDescription }}" />
+    <meta property="twitter:image" content="{{ .OGImage }}" />
     <meta property="og:site_name" content="Killed by">
     <style>
         body {
@@ -21,63 +30,96 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow-y: scroll;
         }
+
         /* Scrollbar styles */
         ::-webkit-scrollbar {
-            width: 12px; /* width of the entire scrollbar */
+            width: 12px;
+            /* width of the entire scrollbar */
         }
+
         ::-webkit-scrollbar-track {
-            background: #2c2c2c; /* color of the track */
+            background: #2c2c2c;
+            /* color of the track */
         }
+
         ::-webkit-scrollbar-thumb {
-            background-color: #bb86fc; /* color of the scroll thumb */
-            border-radius: 10px; /* roundness of the scroll thumb */
-            border: 3px solid #2c2c2c; /* creates padding around scroll thumb */
+            background-color: #bb86fc;
+            /* color of the scroll thumb */
+            border-radius: 10px;
+            /* roundness of the scroll thumb */
+            border: 3px solid #2c2c2c;
+            /* creates padding around scroll thumb */
         }
+
         ::-webkit-scrollbar-thumb:hover {
-            background: #9a67ea; /* color of the scroll thumb when hovered */
+            background: #9a67ea;
+            /* color of the scroll thumb when hovered */
         }
+
         a {
             color: #bb86fc;
             text-decoration: none;
         }
+
         a:hover {
             text-decoration: underline;
         }
+
         .header-logo-container {
             display: flex;
-            justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
-            width: 50px; /* Set the width for the container */
-            height: 50px; /* Set the height for the container */
+            justify-content: center;
+            /* Center horizontally */
+            align-items: center;
+            /* Center vertically */
+            width: 50px;
+            /* Set the width for the container */
+            height: 50px;
+            /* Set the height for the container */
         }
+
         .header-logo {
-            max-width: 100%; /* Ensure the image scales */
-            max-height: 100%; /* Ensure the image scales */
-            height: auto; /* Maintain aspect ratio */
-            width: auto; /* Maintain aspect ratio */
-            object-fit: contain; /* Ensure the image fits within the dimensions while maintaining aspect ratio */
+            max-width: 100%;
+            /* Ensure the image scales */
+            max-height: 100%;
+            /* Ensure the image scales */
+            height: auto;
+            /* Maintain aspect ratio */
+            width: auto;
+            /* Maintain aspect ratio */
+            object-fit: contain;
+            /* Ensure the image fits within the dimensions while maintaining aspect ratio */
         }
+
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Creates a flexible number of columns */
-            grid-gap: 20px; /* Space between cards */
-            padding: 20px; /* Padding around the grid */
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            /* Creates a flexible number of columns */
+            grid-gap: 20px;
+            /* Space between cards */
+            padding: 20px;
+            /* Padding around the grid */
         }
+
         .card {
             background-color: #1e1e1e;
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            transition: transform 0.2s; /* Smooth scaling transition */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            /* Smooth scaling transition */
         }
+
         .card:hover {
-            transform: scale(1.05); /* Slightly enlarges the card on hover */
+            transform: scale(1.05);
+            /* Slightly enlarges the card on hover */
         }
+
         .card-link {
             text-decoration: none;
             color: inherit;
             display: block;
         }
+
         .tag {
             display: inline-block;
             background-color: #333;
@@ -87,39 +129,47 @@
             font-size: 0.85em;
             margin-right: 5px;
         }
+
         .description {
             color: #bbb;
             margin: 10px 0;
         }
+
         header {
             background-color: #242424;
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
+
         header h2 {
             margin: 0;
             color: #ffffff;
         }
+
         header ul {
             list-style: none;
             display: flex;
             margin: 0;
             padding: 0;
         }
+
         header ul li {
             margin-left: 20px;
         }
+
         header ul li a {
             color: #bb86fc;
             text-decoration: none;
             font-weight: bold;
         }
+
         header ul li a:hover {
             text-decoration: underline;
         }
+
         header .home-link {
             color: #ffffff;
             text-decoration: none;
@@ -128,23 +178,25 @@
             border-radius: 20px;
             font-weight: bold;
         }
+
         header .home-link:hover {
             background-color: #9a67ea;
         }
-    </style>    
+    </style>
 </head>
+
 <body>
     <header>
         <h2><a href="/" class="home-link">Killed by</a></h2>
         <ul>
             {{ range $company, $logo := .Companies }}
             <li><a href="/company/{{ $company }}">
-                <div class="header-logo-container">
-                    <img class="header-logo" src="{{ $logo }}" alt="{{ $company }} logo" title="{{ $company }}"/>
-                </div>
-            </a></li>
+                    <div class="header-logo-container">
+                        <img class="header-logo" src="{{ $logo }}" alt="{{ $company }} logo" title="{{ $company }}" />
+                    </div>
+                </a></li>
             {{ end }}
         </ul>
     </header>
     <main>
-{{ end }}
+        {{ end }}
