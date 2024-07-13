@@ -62,7 +62,7 @@
         }
 
         a:hover {
-            text-decoration: underline;
+            text-decoration: none;
         }
 
         .header-logo-container {
@@ -181,6 +181,24 @@
 
         header .home-link:hover {
             background-color: #9a67ea;
+        }
+
+        /* Style definitions to ensure consistent text alignment */
+        .year-group h2 {
+            text-align: center;
+            /* Center text alignment */
+            margin-top: 40px;
+            /* Space above the year heading */
+            color: #bb86fc;
+            /* Purple color for headings */
+        }
+
+        /* Ensure that this style is loaded and applied immediately */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-gap: 20px;
+            padding: 20px;
         }
     </style>
 </head>
