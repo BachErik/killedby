@@ -11,6 +11,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -151,7 +152,9 @@ func main() {
 			}
 			return dict, nil
 		},
-		"isFutureDate": isFutureDate,
+		"isFutureDate":      isFutureDate,
+		"calculateLifespan": calculateLifespan,
+		"domainOnly":        domainOnly,
 	}
 
 	// Fetch custom footer if available
@@ -177,6 +180,14 @@ func main() {
 
 	fmt.Println("Starting server at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func domainOnly(urlStr string) string {
+	urlParsed, err := url.Parse(urlStr)
+	if err != nil {
+		return ""
+	}
+	return urlParsed.Hostname()
 }
 
 func fetchCustomFooter() (string, error) {
