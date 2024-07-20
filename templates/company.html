@@ -14,7 +14,7 @@
 {{ template "footer" . }}
 <style>
     html {
-        scroll-behavior: smooth; /* Ensure smooth scrolling is enabled */
+        scroll-behavior: smooth;
     }
     .year-group h2 {
         text-align: center;
@@ -37,10 +37,10 @@
 </style>
 <script>
     window.addEventListener('load', (event) => {
-        if(window.location.hash) {
-            const id = window.location.hash; // Get the hash from URL
+        if (window.location.hash) {
+            const id = window.location.hash;
             const element = document.querySelector(id);
-            if(element) {
+            if (element) {
                 element.scrollIntoView({ behavior: 'smooth' });
             }
         }
