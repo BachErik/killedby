@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"html/template"
 	"image"
@@ -30,8 +29,8 @@ const (
 )
 
 var (
-	githubUsername   = os.Getenv("GITHUB_USERNAME")
-	githubRepository = os.Getenv("GITHUB_REPOSITORY")
+	githubUsername   = "bacherik"
+	githubRepository = "killedby.json"
 	companyConfig    = make(map[string]Company)
 	projectTypes     = make(map[string]string)
 	yearsProjects    []YearProjects
@@ -65,6 +64,7 @@ type BasePageData struct {
 	OGUrl         string
 	OGImage       string
 	OGDescription string
+	CustomFooter  template.HTML
 }
 
 type YearProjects struct {
@@ -114,6 +114,16 @@ func main() {
 		"domainOnly":        domainOnly,
 	}
 
+	// Fetch custom footer if available
+	customFooter, err := fetchCustomFooter()
+	if err == nil {
+		if err = os.WriteFile("templates/custom_footer.html", []byte(customFooter), 0644); err != nil {
+			log.Printf("Error writing custom footer: %v", err)
+		}
+	} else {
+		log.Printf("Using default footer: %v", err)
+	}
+
 	tmpl := parseTemplates(funcMap)
 
 	http.HandleFunc("/", indexHandler(tmpl))
@@ -125,19 +135,19 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func createDict(values ...interface{}) (map[string]interface{}, error) {
+func createDict(values ...interface{}) map[string]interface{} {
 	if len(values)%2 != 0 {
-		return nil, errors.New("invalid dict call")
+		log.Fatalf("invalid dict call")
 	}
 	dict := make(map[string]interface{})
 	for i := 0; i < len(values); i += 2 {
 		key, ok := values[i].(string)
 		if !ok {
-			return nil, errors.New("dict keys must be strings")
+			log.Fatalf("dict keys must be strings")
 		}
 		dict[key] = values[i+1]
 	}
-	return dict, nil
+	return dict
 }
 
 func domainOnly(urlStr string) string {
@@ -249,6 +259,7 @@ func isFutureDate(dateStr string) bool {
 
 func indexHandler(tmpl *template.Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		customFooter := loadCustomFooter()
 		pageData := IndexPageData{
 			BasePageData: BasePageData{
 				Title:         "Projects by Year",
@@ -257,6 +268,7 @@ func indexHandler(tmpl *template.Template) http.HandlerFunc {
 				OGUrl:         getFullURL(r),
 				OGImage:       getOGImageURL(r, "home"),
 				OGDescription: "Explore discontinued projects and their histories.",
+				CustomFooter:  customFooter,
 			},
 			YearsProjects: yearsProjects,
 			Types:         projectTypes,
@@ -278,6 +290,7 @@ func companyHandler(tmpl *template.Template) http.HandlerFunc {
 			return
 		}
 
+		customFooter := loadCustomFooter()
 		companyPageData := CompanyPageData{
 			BasePageData: BasePageData{
 				Title:         companyName,
@@ -286,6 +299,7 @@ func companyHandler(tmpl *template.Template) http.HandlerFunc {
 				OGUrl:         getFullURL(r),
 				OGImage:       getOGImageURL(r, "company/"+companyName),
 				OGDescription: company.Description,
+				CustomFooter:  customFooter,
 			},
 			YearsProjects: sortProjectsByYear(groupProjectsByYear(company.Projects)),
 			Types:         projectTypes,
@@ -319,6 +333,7 @@ func projectHandler(tmpl *template.Template) http.HandlerFunc {
 			return
 		}
 
+		customFooter := loadCustomFooter()
 		projectPageData := ProjectPageData{
 			BasePageData: BasePageData{
 				Title:         projectName,
@@ -327,6 +342,7 @@ func projectHandler(tmpl *template.Template) http.HandlerFunc {
 				OGUrl:         getFullURL(r),
 				OGImage:       getOGImageURL(r, fmt.Sprintf("project/%s/%s", companyName, projectName)),
 				OGDescription: project.Description,
+				CustomFooter:  customFooter,
 			},
 			Project: project,
 		}
@@ -336,6 +352,19 @@ func projectHandler(tmpl *template.Template) http.HandlerFunc {
 			http.Error(w, "Internal Server Error", 500)
 		}
 	}
+}
+
+func loadCustomFooter() template.HTML {
+	customFooterFilePath := "templates/custom_footer.html"
+	if _, err := os.Stat(customFooterFilePath); err == nil {
+		content, err := os.ReadFile(customFooterFilePath)
+		if err != nil {
+			log.Printf("Error reading custom footer: %v", err)
+			return ""
+		}
+		return template.HTML(content)
+	}
+	return ""
 }
 
 func getFullURL(r *http.Request) string {

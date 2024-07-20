@@ -1,37 +1,41 @@
 {{ define "footer" }}
     </main>
     <footer>
-        <div class="footer-content">
-            <div class="footer-links">
-                <h3>Quick Links</h3>
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/about">About</a></li>
-                    <li><a href="/contact">Contact</a></li>
-                    <li><a href="/privacy">Privacy Policy</a></li>
-                    <li><a href="/terms">Terms of Service</a></li>
-                    <li><a href="https://github.com/BachErik/killedby">GitHub</a></li>
-                </ul>
+        {{- if .CustomFooter -}}
+            {{ .CustomFooter }}
+        {{- else -}}
+            <div class="footer-content">
+                <div class="footer-links">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/about">About</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                        <li><a href="/privacy">Privacy Policy</a></li>
+                        <li><a href="/terms">Terms of Service</a></li>
+                        <li><a href="https://github.com/BachErik/killedby">GitHub</a></li>
+                    </ul>
+                </div>
+                <div class="footer-social">
+                    <h3>Follow Us</h3>
+                    <ul>
+                        <li><a href="https://twitter.com/yourprofile" target="_blank">Twitter</a></li>
+                        <li><a href="https://facebook.com/yourprofile" target="_blank">Facebook</a></li>
+                        <li><a href="https://instagram.com/yourprofile" target="_blank">Instagram</a></li>
+                        <li><a href="https://linkedin.com/in/yourprofile" target="_blank">LinkedIn</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h3>Contact Us</h3>
+                    <p>Email: <a href="mailto:support@killedby.com">support@killedby.com</a></p>
+                    <p>Phone: (123) 456-7890</p>
+                    <p>Address: 123 Main St, Anytown, USA</p>
+                </div>
             </div>
-            <div class="footer-social">
-                <h3>Follow Us</h3>
-                <ul>
-                    <li><a href="https://twitter.com/yourprofile" target="_blank">Twitter</a></li>
-                    <li><a href="https://facebook.com/yourprofile" target="_blank">Facebook</a></li>
-                    <li><a href="https://instagram.com/yourprofile" target="_blank">Instagram</a></li>
-                    <li><a href="https://linkedin.com/in/yourprofile" target="_blank">LinkedIn</a></li>
-                </ul>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Killed by *</p>
             </div>
-            <div class="footer-contact">
-                <h3>Contact Us</h3>
-                <p>Email: <a href="mailto:support@killedby.com">support@killedby.com</a></p>
-                <p>Phone: (123) 456-7890</p>
-                <p>Address: 123 Main St, Anytown, USA</p>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2024 Killed by *</p>
-        </div>
+        {{- end -}}
     </footer>
     <style>
         html, body {
