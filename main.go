@@ -29,8 +29,8 @@ const (
 )
 
 var (
-	githubUsername   = "bacherik"
-	githubRepository = "killedby.json"
+	githubUsername   = os.Getenv("GITHUB_USERNAME")
+	githubRepository = os.Getenv("GITHUB_REPOSITORY")
 	companyConfig    = make(map[string]Company)
 	projectTypes     = make(map[string]string)
 	yearsProjects    []YearProjects
