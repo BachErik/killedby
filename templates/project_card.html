@@ -5,9 +5,7 @@
             <img class="card-logo" src="{{ index .Companies .Project.Company }}" alt="{{ .Project.Company }} logo">
         </div>
         <h3>{{ .Project.Name }}</h3>
-        <p class="description">
-            {{ .Project.Description }}
-        </p>
+        <p class="description">{{ .Project.Description }}</p>
         <div class="tags">
             <span class="tag" style="background-color: #444;">{{ .Project.DateOpen }} - {{ .Project.DateClose }}</span>
             <span class="tag" style="background-color: {{ index .Types .Project.Type }}; color: #f0f0f0;">{{ .Project.Type }}</span>
@@ -31,20 +29,18 @@
     }
     .description {
         display: -webkit-box;
-        display: box;
         -webkit-line-clamp: 3;
-        line-clamp: 3;
         -webkit-box-orient: vertical;
-        box-orient: vertical;
+        line-clamp: 3;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-height: 4.5em; /* Adapt based on actual line-height to display three lines */
-        line-height: 1.5em; /* Assuming a line height of 1.5em for this calculation */
+        max-height: 4.5em;
+        line-height: 1.5em;
     }
     .tags {
         display: flex;
         flex-wrap: wrap;
-        gap: 5px; /* Adds a gap between tags */
+        gap: 5px;
     }
     .tag {
         display: inline-flex;
@@ -53,8 +49,8 @@
         padding: 5px 15px;
         color: #e0e0e0;
         font-size: 0.85em;
-        margin: 2px; /* Ensures small spacing around each tag */
-        white-space: nowrap; /* Prevents tags from breaking into multiple lines */
+        margin: 2px;
+        white-space: nowrap;
     }
 </style>
 {{ end }}
