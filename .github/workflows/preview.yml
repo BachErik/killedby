@@ -1,0 +1,134 @@
+name: Deploy Preview to Kubernetes
+
+on:
+  pull_request:
+    types:
+      - labeled
+      - closed
+
+jobs:
+  deploy-preview:
+    if: ${{ github.event.action == 'labeled' && github.event.label.name == 'deploy-preview' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Wait for Image Build
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const imageTag = `pr-${prNumber}`;
+            const repo = 'bacherik/killedby';
+            let imageExists = false;
+
+            for (let i = 0; i < 30; i++) { // Retry for up to 5 minutes
+              const res = await fetch(`https://hub.docker.com/v2/repositories/${repo}/tags/${imageTag}/`);
+              if (res.status === 200) {
+                imageExists = true;
+                break;
+              }
+              await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+            }
+
+            if (!imageExists) {
+              throw new Error(`Docker image ${repo}:${imageTag} not found after waiting.`);
+            }
+
+      - name: Create Namespace
+        uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: create namespace killedbypr${{ github.event.pull_request.number }}
+          
+      - name: Deploy to Kubernetes
+        run: |
+          mkdir -p k8s
+          cat <<EOF > k8s/deployment.yaml
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: killedby
+            namespace: killedbypr${{ github.event.pull_request.number }}
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: killedby
+            template:
+              metadata:
+                labels:
+                  app: killedby
+              spec:
+                containers:
+                - name: killedby
+                  image: bacherik/killedby:pr-${{ github.event.pull_request.number }}
+                  env:
+                  - name: GITHUB_USERNAME
+                    value: "bacherik"
+                  - name: GITHUB_REPOSITORY
+                    value: "killedby.json"
+                  ports:
+                  - containerPort: 8080
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: killedby
+            namespace: killedbypr${{ github.event.pull_request.number }}
+          spec:
+            selector:
+              app: killedby
+            ports:
+            - protocol: TCP
+              port: 80
+              targetPort: 8080
+          ---
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: killedby
+            namespace: killedbypr${{ github.event.pull_request.number }}
+            annotations:
+              cert-manager.io/cluster-issuer: "letsencrypt"
+              kubernetes.io/ingress.class: traefik
+              ingress.kubernetes.io/whitelist-source-range: "192.168.0.0/16"
+          spec:
+            tls:
+            - hosts:
+              - pr-${{ github.event.pull_request.number }}.killedby.bacherik.de
+              secretName: pr${{ github.event.pull_request.number }}-killedby-tls
+            rules:
+            - host: pr-${{ github.event.pull_request.number }}.killedby.bacherik.de
+              http:
+                paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: killedby
+                      port:
+                        number: 80
+          EOF
+
+      - name: Deploy to Kubernetes
+        uses: actions-hub/kubectl@v1.31.2
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: apply -f k8s/
+
+  cleanup:
+    if: ${{ github.event.action == 'closed' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Cleanup Kubernetes Resources
+        uses: actions-hub/kubectl@v1.31.2
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: delete namespace killedbypr${{ github.event.pull_request.number }}
