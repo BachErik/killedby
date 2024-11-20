@@ -37,7 +37,14 @@ jobs:
               throw new Error(`Docker image ${repo}:${imageTag} not found after waiting.`);
             }
 
-      - name: Create Kubernetes Resources
+      - name: Create Namespace
+        uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: create namespace killedbypr${{ github.event.pull_request.number }}
+          
+      - name: Deploy to Kubernetes
         run: |
           mkdir -p k8s
           cat <<EOF > k8s/deployment.yaml
@@ -108,7 +115,7 @@ jobs:
           EOF
 
       - name: Deploy to Kubernetes
-        uses: actions-hub/kubectl@master
+        uses: actions-hub/kubectl@v1.31.2
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         with:
@@ -120,7 +127,7 @@ jobs:
 
     steps:
       - name: Cleanup Kubernetes Resources
-        uses: actions-hub/kubectl@master
+        uses: actions-hub/kubectl@v1.31.2
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         with:
