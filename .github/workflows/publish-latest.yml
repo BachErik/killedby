@@ -15,13 +15,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Check if running in a pull request
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo "Running in a pull request, aborting workflow." && exit 0
+
       - name: Create Namespace (if not exists)
         uses: actions-hub/kubectl@v1.31.3
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         with:
           args: |
-            create namespace killedby-latest || echo "Namespace already exists"
+            kubectl get namespace killedby-latest || kubectl create namespace killedby-latest
 
       - name: Deploy to Kubernetes
         run: |
@@ -45,6 +49,7 @@ jobs:
                 containers:
                 - name: killedby-latest
                   image: bacherik/killedby:latest
+                  imagePullPolicy: Always
                   env:
                   - name: GITHUB_USERNAME
                     value: "bacherik"
