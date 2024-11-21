@@ -1,0 +1,103 @@
+name: Deploy Main to Kubernetes
+
+on:
+  workflow_run:
+    workflows:
+      - Build and Push Docker Image
+    types:
+      - completed
+
+jobs:
+  deploy-main:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create Namespace (if not exists)
+        uses: actions-hub/kubectl@v1.31.3
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: |
+            create namespace killedby-latest || echo "Namespace already exists"
+
+      - name: Deploy to Kubernetes
+        run: |
+          mkdir -p k8s
+          cat <<EOF > k8s/deployment.yaml
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: killedby-latest
+            namespace: killedby-latest
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: killedby-latest
+            template:
+              metadata:
+                labels:
+                  app: killedby-latest
+              spec:
+                containers:
+                - name: killedby-latest
+                  image: bacherik/killedby:latest
+                  env:
+                  - name: GITHUB_USERNAME
+                    value: "bacherik"
+                  - name: GITHUB_REPOSITORY
+                    value: "killedby.json"
+                  - name: GITHUB_COMMIT_SHA
+                    value: ${{ env.COMMIT_SHA }}
+                  ports:
+                  - containerPort: 8080
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: killedby-latest
+            namespace: killedby-latest
+          spec:
+            selector:
+              app: killedby-latest
+            ports:
+            - protocol: TCP
+              port: 80
+              targetPort: 8080
+          ---
+          apiVersion: networking.k8s.io/v1
+          kind: Ingress
+          metadata:
+            name: killedby-latest
+            namespace: killedby-latest
+            annotations:
+              cert-manager.io/cluster-issuer: "letsencrypt"
+              kubernetes.io/ingress.class: traefik
+              ingress.kubernetes.io/whitelist-source-range: "192.168.0.0/16"
+          spec:
+            tls:
+            - hosts:
+              - latest.killedby.bacherik.de
+              secretName: killedby-latest-tls
+            rules:
+            - host: latest.killedby.bacherik.de
+              http:
+                paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: killedby-latest
+                      port:
+                        number: 80
+          EOF
+
+      - name: Deploy to Kubernetes
+        uses: actions-hub/kubectl@v1.31.3
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: apply -f k8s/
