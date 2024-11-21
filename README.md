@@ -45,6 +45,12 @@ Modify the following environment variables as needed to point to different data 
 - `GITHUB_USERNAME`: Username of the GitHub account where the data repository is located.
 - `GITHUB_REPOSITORY`: Name of the repository containing JSON files with project data.
 
+### Workflow Changes
+
+- The `Deploy Main to Kubernetes` workflow now checks if the namespace exists before attempting to create it, preventing redundant namespace creation.
+- The `Build and Push Docker Image` action is excluded from executing on pull requests.
+- Kubernetes deployments are updated by adding a unique identifier to the image tag to ensure updates even when reapplying the same tag.
+
 ## Contributing
 
 Contributions are welcome! If you have suggestions for improvements or bug fixes, please fork the repository and submit a pull request.
