@@ -3,7 +3,7 @@ name: Deploy Main to Kubernetes
 on:
   workflow_run:
     workflows:
-      - Build and Publish Image
+      - Build and Push Docker Image
     types:
       - completed
 
@@ -21,7 +21,7 @@ jobs:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         with:
           args: |
-            create namespace killedby-main || echo "Namespace already exists"
+            create namespace killedby-latest || echo "Namespace already exists"
 
       - name: Deploy to Kubernetes
         run: |
