@@ -48,7 +48,7 @@ jobs:
               spec:
                 containers:
                 - name: killedby-latest
-                  image: bacherik/killedby:latest-${{ github.run_id }}
+                  image: bacherik/killedby:latest
                   imagePullPolicy: Always
                   env:
                   - name: GITHUB_USERNAME
