@@ -7,6 +7,7 @@ WORKDIR /app
 # Set environment variables
 ENV GITHUB_USERNAME=bacherik
 ENV GITHUB_REPOSITORY=killedby.json
+ENV UPDATE_TOKEN=testToken
 
 # Copy the go.mod and go.sum files into the working directory
 COPY go.mod go.sum ./

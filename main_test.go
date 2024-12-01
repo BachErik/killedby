@@ -1,7 +1,6 @@
 package main
 
 import (
-	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,8 +10,8 @@ import (
 
 func TestMain(m *testing.M) {
 	// Setup
-	githubUsername = "testuser"
-	githubRepository = "testrepo"
+	githubUsername = "BachErik"
+	githubRepository = "killedby.json"
 	os.Setenv("GITHUB_USERNAME", githubUsername)
 	os.Setenv("GITHUB_REPOSITORY", githubRepository)
 	code := m.Run()
@@ -57,13 +56,10 @@ func TestIndexHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	rr := httptest.NewRecorder()
-	tmpl := parseTemplates(template.FuncMap{
-		"dict":              createDict,
-		"isFutureDate":      isFutureDate,
-		"calculateLifespan": calculateLifespan,
-		"domainOnly":        domainOnly,
-	})
-	handler := http.HandlerFunc(indexHandler(tmpl))
+
+	updateRepoCache()
+
+	handler := http.HandlerFunc(indexHandler)
 
 	handler.ServeHTTP(rr, req)
 
@@ -78,13 +74,10 @@ func TestCompanyHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	rr := httptest.NewRecorder()
-	tmpl := parseTemplates(template.FuncMap{
-		"dict":              createDict,
-		"isFutureDate":      isFutureDate,
-		"calculateLifespan": calculateLifespan,
-		"domainOnly":        domainOnly,
-	})
-	handler := http.HandlerFunc(companyHandler(tmpl))
+
+	updateRepoCache()
+
+	handler := http.HandlerFunc(companyHandler)
 
 	handler.ServeHTTP(rr, req)
 

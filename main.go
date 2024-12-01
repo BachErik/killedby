@@ -92,6 +92,21 @@ type ProjectPageData struct {
 }
 
 func main() {
+	updateRepoCache()
+	r := mux.NewRouter()
+
+	r.HandleFunc("/", indexHandler).Methods("GET")
+	r.HandleFunc("/company/{companyName}", companyHandler).Methods("GET")
+	r.HandleFunc("/project/{companyName}/{projectName}", projectHandler).Methods("GET")
+	r.HandleFunc("/og/", ogImageHandler).Methods("GET")
+
+	r.HandleFunc("/update", updateHandler).Methods("POST")
+
+	fmt.Println("Starting server at :8080")
+	log.Fatal(http.ListenAndServe(":8080", r))
+}
+
+func updateRepoCache() {
 	companiesURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/main/config/companies.json", githubUsername, githubRepository)
 	typesURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/main/config/types.json", githubUsername, githubRepository)
 
@@ -128,15 +143,7 @@ func main() {
 
 	tmpl = parseTemplates(funcMap)
 
-	r := mux.NewRouter()
-
-	r.HandleFunc("/", indexHandler).Methods("GET")
-	r.HandleFunc("/company/{companyName}", companyHandler).Methods("GET")
-	r.HandleFunc("/project/{companyName}/{projectName}", projectHandler).Methods("GET")
-	r.HandleFunc("/og/", ogImageHandler).Methods("GET")
-
-	fmt.Println("Starting server at :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	fmt.Println("Updated Repo config")
 }
 
 func createDict(values ...interface{}) map[string]interface{} {
@@ -261,6 +268,19 @@ func isFutureDate(dateStr string) bool {
 	return date.After(time.Now())
 }
 
+func updateHandler(w http.ResponseWriter, r *http.Request) {
+	tokenHeader := r.Header.Get("Authorization")
+
+	if tokenHeader == "" || tokenHeader != os.Getenv("UPDATE_TOKEN") {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+
+	updateRepoCache()
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	customFooter := loadCustomFooter()
 	pageData := IndexPageData{
@@ -280,7 +300,6 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	if err := tmpl.ExecuteTemplate(w, "index", pageData); err != nil {
 		log.Printf("Error executing template: %v", err)
 		http.Error(w, "Internal Server Error", 500)
-
 	}
 }
 
