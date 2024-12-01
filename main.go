@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/fogleman/gg"
+	"github.com/gorilla/mux"
 	"github.com/srwiley/oksvg"
 	"github.com/srwiley/rasterx"
 	"golang.org/x/image/draw"
@@ -34,6 +35,7 @@ var (
 	companyConfig    = make(map[string]Company)
 	projectTypes     = make(map[string]string)
 	yearsProjects    []YearProjects
+	tmpl             *template.Template
 )
 
 type Project struct {
@@ -124,15 +126,17 @@ func main() {
 		log.Printf("Using default footer: %v", err)
 	}
 
-	tmpl := parseTemplates(funcMap)
+	tmpl = parseTemplates(funcMap)
 
-	http.HandleFunc("/", indexHandler(tmpl))
-	http.HandleFunc("/company/", companyHandler(tmpl))
-	http.HandleFunc("/project/", projectHandler(tmpl))
-	http.HandleFunc("/og/", ogImageHandler)
+	r := mux.NewRouter()
+
+	r.HandleFunc("/", indexHandler).Methods("GET")
+	r.HandleFunc("/company/{companyName}", companyHandler).Methods("GET")
+	r.HandleFunc("/project/{companyName}/{projectName}", projectHandler).Methods("GET")
+	r.HandleFunc("/og/", ogImageHandler).Methods("GET")
 
 	fmt.Println("Starting server at :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
 func createDict(values ...interface{}) map[string]interface{} {
@@ -257,101 +261,92 @@ func isFutureDate(dateStr string) bool {
 	return date.After(time.Now())
 }
 
-func indexHandler(tmpl *template.Template) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		customFooter := loadCustomFooter()
-		pageData := IndexPageData{
-			BasePageData: BasePageData{
-				Title:         "Projects by Year",
-				Companies:     extractCompanies(),
-				OGTitle:       "Killed by - Home",
-				OGUrl:         getFullURL(r),
-				OGImage:       getOGImageURL(r, "home"),
-				OGDescription: "Explore discontinued projects and their histories.",
-				CustomFooter:  customFooter,
-			},
-			YearsProjects: yearsProjects,
-			Types:         projectTypes,
-		}
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	customFooter := loadCustomFooter()
+	pageData := IndexPageData{
+		BasePageData: BasePageData{
+			Title:         "Projects by Year",
+			Companies:     extractCompanies(),
+			OGTitle:       "Killed by - Home",
+			OGUrl:         getFullURL(r),
+			OGImage:       getOGImageURL(r, "home"),
+			OGDescription: "Explore discontinued projects and their histories.",
+			CustomFooter:  customFooter,
+		},
+		YearsProjects: yearsProjects,
+		Types:         projectTypes,
+	}
 
-		if err := tmpl.ExecuteTemplate(w, "index", pageData); err != nil {
-			log.Printf("Error executing template: %v", err)
-			http.Error(w, "Internal Server Error", 500)
-		}
+	if err := tmpl.ExecuteTemplate(w, "index", pageData); err != nil {
+		log.Printf("Error executing template: %v", err)
+		http.Error(w, "Internal Server Error", 500)
+
 	}
 }
 
-func companyHandler(tmpl *template.Template) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		companyName := strings.TrimPrefix(r.URL.Path, "/company/")
-		company, ok := companyConfig[companyName]
-		if !ok {
-			http.NotFound(w, r)
-			return
-		}
-
-		customFooter := loadCustomFooter()
-		companyPageData := CompanyPageData{
-			BasePageData: BasePageData{
-				Title:         companyName,
-				Companies:     extractCompanies(),
-				OGTitle:       "Killed by - " + companyName,
-				OGUrl:         getFullURL(r),
-				OGImage:       getOGImageURL(r, "company/"+companyName),
-				OGDescription: company.Description,
-				CustomFooter:  customFooter,
-			},
-			YearsProjects: sortProjectsByYear(groupProjectsByYear(company.Projects)),
-			Types:         projectTypes,
-		}
-
-		if err := tmpl.ExecuteTemplate(w, "company", companyPageData); err != nil {
-			log.Printf("Error executing template: %v", err)
-			http.Error(w, "Internal Server Error", 500)
-		}
+func companyHandler(w http.ResponseWriter, r *http.Request) {
+	companyName := mux.Vars(r)["companyName"]
+	company, ok := companyConfig[companyName]
+	if !ok {
+		http.NotFound(w, r)
+		return
 	}
+
+	customFooter := loadCustomFooter()
+	companyPageData := CompanyPageData{
+		BasePageData: BasePageData{
+			Title:         companyName,
+			Companies:     extractCompanies(),
+			OGTitle:       "Killed by - " + companyName,
+			OGUrl:         getFullURL(r),
+			OGImage:       getOGImageURL(r, "company/"+companyName),
+			OGDescription: company.Description,
+			CustomFooter:  customFooter,
+		},
+		YearsProjects: sortProjectsByYear(groupProjectsByYear(company.Projects)),
+		Types:         projectTypes,
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "company", companyPageData); err != nil {
+		log.Printf("Error executing template: %v", err)
+		http.Error(w, "Internal Server Error", 500)
+	}
+
 }
 
-func projectHandler(tmpl *template.Template) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/project/"), "/")
-		if len(parts) < 2 {
-			http.NotFound(w, r)
-			return
-		}
-
-		companyName, projectName := parts[0], parts[1]
-		company, ok := companyConfig[companyName]
-		if !ok {
-			http.NotFound(w, r)
-			return
-		}
-
-		project, found := findProjectByName(company.Projects, projectName)
-		if !found {
-			http.NotFound(w, r)
-			return
-		}
-
-		customFooter := loadCustomFooter()
-		projectPageData := ProjectPageData{
-			BasePageData: BasePageData{
-				Title:         projectName,
-				Companies:     extractCompanies(),
-				OGTitle:       fmt.Sprintf("%s is a %s being killed by %s in %s", projectName, project.Type, companyName, project.DateClose[:4]),
-				OGUrl:         getFullURL(r),
-				OGImage:       getOGImageURL(r, fmt.Sprintf("project/%s/%s", companyName, projectName)),
-				OGDescription: project.Description,
-				CustomFooter:  customFooter,
-			},
-			Project: project,
-		}
-
-		if err := tmpl.ExecuteTemplate(w, "project", projectPageData); err != nil {
-			log.Printf("Error executing template: %v", err)
-			http.Error(w, "Internal Server Error", 500)
-		}
+func projectHandler(w http.ResponseWriter, r *http.Request) {
+	companyName, projectName := mux.Vars(r)["companyName"], mux.Vars(r)["projectName"]
+	company, ok := companyConfig[companyName]
+	if !ok {
+		http.NotFound(w, r)
+		return
 	}
+
+	project, found := findProjectByName(company.Projects, projectName)
+	if !found {
+		http.NotFound(w, r)
+		return
+	}
+
+	customFooter := loadCustomFooter()
+	projectPageData := ProjectPageData{
+		BasePageData: BasePageData{
+			Title:         projectName,
+			Companies:     extractCompanies(),
+			OGTitle:       fmt.Sprintf("%s is a %s being killed by %s in %s", projectName, project.Type, companyName, project.DateClose[:4]),
+			OGUrl:         getFullURL(r),
+			OGImage:       getOGImageURL(r, fmt.Sprintf("project/%s/%s", companyName, projectName)),
+			OGDescription: project.Description,
+			CustomFooter:  customFooter,
+		},
+		Project: project,
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "project", projectPageData); err != nil {
+		log.Printf("Error executing template: %v", err)
+		http.Error(w, "Internal Server Error", 500)
+	}
+
 }
 
 func loadCustomFooter() template.HTML {
