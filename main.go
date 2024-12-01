@@ -98,7 +98,8 @@ func main() {
 	r.HandleFunc("/", indexHandler).Methods("GET")
 	r.HandleFunc("/company/{companyName}", companyHandler).Methods("GET")
 	r.HandleFunc("/project/{companyName}/{projectName}", projectHandler).Methods("GET")
-	r.HandleFunc("/og/", ogImageHandler).Methods("GET")
+	r.HandleFunc("/og/{type}", ogImageHandler).Methods("GET")
+	r.HandleFunc("/og/{type}/{params:.*}", ogImageHandler).Methods("GET")
 
 	r.HandleFunc("/update", updateHandler).Methods("POST")
 
@@ -497,26 +498,29 @@ func resizeImage(img image.Image, width, height int) image.Image {
 }
 
 func ogImageHandler(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/og/")
-	if path == "" {
+	vars := mux.Vars(r)
+	pathType := vars["type"]
+	params := vars["params"]
+
+	if pathType == "" {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
 	var img image.Image
-	switch {
-	case path == "home":
+	switch pathType {
+	case "home":
 		img = generateHomePageImage()
-	case strings.HasPrefix(path, "company/"):
-		companyName := strings.TrimPrefix(path, "company/")
+	case "company":
+		companyName := params
 		company, ok := companyConfig[companyName]
 		if !ok {
 			http.NotFound(w, r)
 			return
 		}
 		img = generateSimpleImage("Explore projects by "+companyName, company.Logo, company.Description)
-	case strings.HasPrefix(path, "project/"):
-		parts := strings.SplitN(path[len("project/"):], "/", 2)
+	case "project":
+		parts := strings.SplitN(params, "/", 2)
 		if len(parts) < 2 {
 			http.NotFound(w, r)
 			return
