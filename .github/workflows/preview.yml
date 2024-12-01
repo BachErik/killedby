@@ -125,6 +125,7 @@ jobs:
 
   cleanup:
     if: ${{ github.event.action == 'closed' }}
+    needs: deploy-preview
     runs-on: ubuntu-latest
 
     steps:
