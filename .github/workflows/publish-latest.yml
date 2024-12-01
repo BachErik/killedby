@@ -6,6 +6,7 @@ on:
       - Build and Push Docker Image
     types:
       - completed
+  workflow_dispatch:
 
 jobs:
   deploy-main:
@@ -52,6 +53,8 @@ jobs:
                     value: "bacherik"
                   - name: GITHUB_REPOSITORY
                     value: "killedby.json"
+                  - name: UPDATE_TOKEN
+                    value: "${{ secrets.UPDATE_TOKEN }}"
                   - name: GITHUB_COMMIT_SHA
                     value: ${{ env.COMMIT_SHA }}
                   ports:
