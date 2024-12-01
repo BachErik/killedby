@@ -9,6 +9,7 @@ services:
     environment:
       - GITHUB_USERNAME=bacherik
       - GITHUB_REPOSITORY=killedby.json
+      - UPDATE_TOKEN=testToken
     restart: always
 
 networks:

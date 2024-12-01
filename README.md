@@ -27,12 +27,15 @@ Before setting up the project, ensure you have Docker and Git installed on your 
    git clone https://github.com/BachErik/killedby.json your-project-name
    cd your-project-name
    ```
+   > [!NOTE]
+   > If you want to automatically update your repo cache on changes make sure you have the GitHub action configured correctly to your domain and set the `UPDATE_TOKEN`
+
 
 2. **Docker Setup**:
    Build and run the Docker container:
    ```bash
    docker build -t yourusername/killedby .
-   docker run -d -p 8080:8080 -e GITHUB_USERNAME=yourusername -e GITHUB_REPOSITORY=your-repo.json yourusername/killedby
+   docker run -d -p 8080:8080 -e GITHUB_USERNAME=yourusername -e GITHUB_REPOSITORY=your-repo.json -e UPDATE_TOKE=someSaveToken yourusername/killedby
    ```
 
 ## Usage
@@ -44,6 +47,7 @@ Once the application is running, access it by navigating to `http://localhost:80
 Modify the following environment variables as needed to point to different data sources or customize the application behavior:
 - `GITHUB_USERNAME`: Username of the GitHub account where the data repository is located.
 - `GITHUB_REPOSITORY`: Name of the repository containing JSON files with project data.
+- `UPDATE_TOKEN`: This toke is used in the `/update` POST request for authentication that an authorized request to update the repo cache.
 
 ## Contributing
 

@@ -71,6 +71,8 @@ jobs:
                     value: "bacherik"
                   - name: GITHUB_REPOSITORY
                     value: "killedby.json"
+                  - name: UPDATE_TOKEN
+                    value: "${{ secrets.UPDATE_TOKEN }}"
                   ports:
                   - containerPort: 8080
           ---
