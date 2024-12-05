@@ -37,6 +37,7 @@ jobs:
         platforms: linux/amd64,linux/arm64/v8
         tags: |
           bacherik/killedby:${{ github.event_name == 'push' && 'latest' || github.event_name == 'release' && github.event.release.tag_name || 'pr-' }}${{ github.event.pull_request.number || '' }}
+          bacherik/killedby:${{ github.sha }}
 
     - name: Logout from DockerHub
       run: docker logout
