@@ -64,6 +64,11 @@ jobs:
         run: |
           mkdir -p k8s
           cat <<EOF > k8s/deployment.yaml
+          apiVersion: v1
+          kind: Namespace
+          metadata: 
+            name: killedbypr${{ github.event.pull_request.number }}
+          ---
           apiVersion: apps/v1
           kind: Deployment
           metadata:
