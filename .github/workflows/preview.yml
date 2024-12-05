@@ -42,6 +42,13 @@ jobs:
               throw new Error(`Docker image ${repo}:${imageTag} not found after waiting.`);
             }
 
+      - name: Create Namespace
+        uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: create namespace killedbypr${{ github.event.pull_request.number }}
+
       - name: Create or Update Resources
         run: |
           mkdir -p k8s
