@@ -20,26 +20,37 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Wait for Image Build
+      - name: Wait for Build and Push Docker Image Workflow
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const prNumber = context.payload.pull_request.number;
-            const imageTag = `pr-${prNumber}`;
-            const repo = 'bacherik/killedby';
-            let imageExists = false;
-
-            for (let i = 0; i < 30; i++) { // Retry for up to 5 minutes
-              const res = await fetch(`https://hub.docker.com/v2/repositories/${repo}/tags/${imageTag}/`);
-              if (res.status === 200) {
-                imageExists = true;
-                break;
-              }
-              await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+            const workflowName = "Build and Push Docker Image";
+            const { data: workflows } = await github.rest.actions.listRepoWorkflows({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+      
+            const workflow = workflows.workflows.find(w => w.name === workflowName);
+            if (!workflow) {
+              throw new Error(`Workflow '${workflowName}' not found.`);
             }
-
-            if (!imageExists) {
-              throw new Error(`Docker image ${repo}:${imageTag} not found after waiting.`);
+      
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: workflow.id,
+              branch: context.payload.pull_request.head.ref,
+              status: 'completed',
+            });
+      
+            if (runs.data.total_count === 0) {
+              throw new Error(`No completed runs found for workflow '${workflowName}' on branch '${context.payload.pull_request.head.ref}'.`);
+            }
+      
+            const latestRun = runs.data.workflow_runs[0];
+            if (latestRun.conclusion !== "success") {
+              throw new Error(`Latest run of workflow '${workflowName}' failed.`);
             }
 
       - name: Create Namespace
@@ -71,6 +82,7 @@ jobs:
                 containers:
                 - name: killedby
                   image: bacherik/killedby:pr-${{ github.event.pull_request.number }}
+                  imagePullPolicy: Always
                   env:
                   - name: GITHUB_USERNAME
                     value: "bacherik"
@@ -101,9 +113,9 @@ jobs:
             namespace: killedbypr${{ github.event.pull_request.number }}
             annotations:
               cert-manager.io/cluster-issuer: "letsencrypt"
-              kubernetes.io/ingress.class: traefik
               ingress.kubernetes.io/whitelist-source-range: "192.168.0.0/16"
           spec:
+          ingressClassName: traefik
             tls:
             - hosts:
               - pr-${{ github.event.pull_request.number }}.killedby.bacherik.de
