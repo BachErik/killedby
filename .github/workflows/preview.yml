@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy-preview:
-    if: ${{ (github.event.action == 'labeled' && github.event.label.name == 'deploy-preview') || (github.event.action == 'synchronize' && github.event.label.name == 'deploy-preview') }}
+    if: ${{ (github.event.action == 'labeled' && github.event.label.name == 'deploy-preview') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'deploy-preview') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
