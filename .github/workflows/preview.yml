@@ -25,32 +25,62 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const workflowName = "Build and Push Docker Image";
-            const { data: workflows } = await github.rest.actions.listRepoWorkflows({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
-      
-            const workflow = workflows.workflows.find(w => w.name === workflowName);
-            if (!workflow) {
-              throw new Error(`Workflow '${workflowName}' not found.`);
-            }
-      
-            const runs = await github.rest.actions.listWorkflowRuns({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: workflow.id,
-              branch: context.payload.pull_request.head.ref,
-              status: 'completed',
-            });
-      
-            if (runs.data.total_count === 0) {
-              throw new Error(`No completed runs found for workflow '${workflowName}' on branch '${context.payload.pull_request.head.ref}'.`);
-            }
-      
-            const latestRun = runs.data.workflow_runs[0];
-            if (latestRun.conclusion !== "success") {
-              throw new Error(`Latest run of workflow '${workflowName}' failed.`);
+            const workflowName = "Build and Push Docker Image"; // Target workflow name
+            const commitSha = "${{ github.sha }}"; // Current commit SHA
+            const { owner, repo } = context.repo;
+
+            console.log(`Checking status of all workflows for commit ${commitSha}...`);
+
+            let targetWorkflow = null;
+
+            // Loop: Search for the workflow and check its status
+            while (true) {
+              const workflows = await github.actions.listWorkflowRunsForRepo({
+                owner,
+                repo,
+                per_page: 100,
+              });
+
+              // Filter workflows for the current commit
+              const matchingRuns = workflows.data.workflow_runs.filter(
+                (run) => run.head_sha === commitSha
+              );
+
+              // Look for the specific workflow
+              targetWorkflow = matchingRuns.find(
+                (run) => run.name === workflowName
+              );
+
+              if (targetWorkflow) {
+                const status = targetWorkflow.status;
+                const conclusion = targetWorkflow.conclusion;
+
+                if (status === "completed") {
+                  if (conclusion === "success") {
+                    console.log(`Workflow "${workflowName}" completed successfully.`);
+                    break; // Successfully completed, exit the loop
+                  } else if (conclusion === "failure") {
+                    console.error(`Workflow "${workflowName}" failed.`);
+                    throw new Error("Dependent workflow failed.");
+                  } else {
+                    console.error(
+                      `Workflow "${workflowName}" completed with unknown status: ${conclusion}.`
+                    );
+                    throw new Error("Unknown workflow status.");
+                  }
+                } else {
+                  console.log(
+                    `Workflow "${workflowName}" is not completed yet (status: ${status}). Waiting...`
+                  );
+                }
+              } else {
+                console.log(
+                  `Workflow "${workflowName}" for commit ${commitSha} not found yet. Waiting...`
+                );
+              }
+
+              // Wait 10 seconds before checking again
+              await new Promise((resolve) => setTimeout(resolve, 10000));
             }
 
       - name: Create or Update Resources
@@ -79,7 +109,7 @@ jobs:
               spec:
                 containers:
                 - name: killedby
-                  image: bacherik/killedby:pr-${{ github.event.pull_request.number }}
+                  image: bacherik/killedby:${{ github.sha }}
                   imagePullPolicy: Always
                   env:
                   - name: GITHUB_USERNAME
