@@ -113,9 +113,9 @@ jobs:
             namespace: killedbypr${{ github.event.pull_request.number }}
             annotations:
               cert-manager.io/cluster-issuer: "letsencrypt"
+              kubernetes.io/ingress.class: traefik
               ingress.kubernetes.io/whitelist-source-range: "192.168.0.0/16"
           spec:
-          ingressClassName: traefik
             tls:
             - hosts:
               - pr-${{ github.event.pull_request.number }}.killedby.bacherik.de
