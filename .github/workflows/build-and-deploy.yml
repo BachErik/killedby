@@ -19,6 +19,7 @@ on:
 
 jobs:
   build-and-push:
+    if: github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled')
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
