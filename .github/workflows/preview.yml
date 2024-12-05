@@ -10,6 +10,9 @@ jobs:
   deploy-preview:
     if: ${{ github.event.action == 'labeled' && github.event.label.name == 'deploy-preview' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
 
     steps:
       - name: Checkout Code
@@ -139,6 +142,10 @@ jobs:
     if: ${{ github.event.action == 'closed' }}
     needs: deploy-preview
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      issues: write
 
     steps:
       - name: Cleanup Kubernetes Resources
