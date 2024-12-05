@@ -6,10 +6,11 @@ on:
       - labeled
       - unlabeled
       - closed
+      - synchronize
 
 jobs:
   deploy-preview:
-    if: ${{ github.event.action == 'labeled' && github.event.label.name == 'deploy-preview' }}
+    if: ${{ (github.event.action == 'labeled' && github.event.label.name == 'deploy-preview') || github.event.action == 'synchronize' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -41,14 +42,7 @@ jobs:
               throw new Error(`Docker image ${repo}:${imageTag} not found after waiting.`);
             }
 
-      - name: Create Namespace
-        uses: actions-hub/kubectl@master
-        env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
-        with:
-          args: create namespace killedbypr${{ github.event.pull_request.number }}
-          
-      - name: Deploy to Kubernetes
+      - name: Create or Update Resources
         run: |
           mkdir -p k8s
           cat <<EOF > k8s/deployment.yaml
@@ -120,33 +114,55 @@ jobs:
                         number: 80
           EOF
 
-      - name: Deploy to Kubernetes
-        uses: actions-hub/kubectl@v1.31.3
-        env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
-        with:
-          args: apply -f k8s/
+          kubectl apply -f k8s/ --kubeconfig="${{ secrets.KUBE_CONFIG }}"
 
-      - name: Write comment on PR
+      - name: Delete Existing Comment
         uses: actions/github-script@v7
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const comments = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const botComment = comments.data.find(comment =>
+              comment.body.includes('Preview is now online')
+            );
+
+            if (botComment) {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+              });
+            }
+
+      - name: Write New Comment on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const url = `https://pr-${prNumber}.killedby.bacherik.de`;
+            const updatedAt = new Date().toISOString();
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'Preview is now online [here](https://pr-${{ github.event.pull_request.number }}.killedby.bacherik.de).'
-            })
+              body: `🎉 **Preview is now online!**\n\n🔗 [Access Preview Here](${url})\n🕒 Last updated: ${updatedAt}`,
+            });
 
   cleanup:
     if: ${{ github.event.action == 'closed' || (github.event.action == 'unlabeled' && github.event.label.name == 'deploy-preview') }}
     runs-on: ubuntu-latest
-
+  
     permissions:
       contents: read
       pull-requests: write
-
+  
     steps:
       - name: Cleanup Kubernetes Resources
         uses: actions-hub/kubectl@v1.31.3
@@ -154,15 +170,38 @@ jobs:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         with:
           args: delete namespace killedbypr${{ github.event.pull_request.number }}
-
+  
+      - name: Delete Existing Comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comments = await github.rest.issues.listComments({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+  
+            const botComment = comments.data.find(comment =>
+              comment.body.includes('Preview is now online')
+            );
+  
+            if (botComment) {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+              });
+            }
+  
       - name: Write comment on PR
         uses: actions/github-script@v7
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'Preview got deleted.'
+              body: '🚨 **Preview has been deleted.**\n\nThe namespace and resources associated with this pull request have been cleaned up.'
             })
