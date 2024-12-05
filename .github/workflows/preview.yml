@@ -4,6 +4,7 @@ on:
   pull_request:
     types:
       - labeled
+      - unlabeled
       - closed
 
 jobs:
@@ -139,8 +140,7 @@ jobs:
             })
 
   cleanup:
-    if: ${{ github.event.action == 'closed' }}
-    needs: deploy-preview
+    if: ${{ github.event.action == 'closed' || (github.event.action == 'unlabeled' && github.event.label.name == 'deploy-preview') }}
     runs-on: ubuntu-latest
 
     permissions:
