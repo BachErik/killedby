@@ -19,7 +19,7 @@ on:
 
 jobs:
   build-and-push:
-    if: github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled')
+    if: github.event.action != 'labeled' && github.event.action != 'unlabeled'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
@@ -148,7 +148,7 @@ jobs:
 
   deploy-preview:
     needs: build-and-push
-    if: ${{ (github.event.action == 'labeled' && github.event.label.name == 'deploy-preview') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'deploy-preview')) }}
+    if: success() && (github.event.action == 'labeled' && github.event.label.name == 'deploy-preview') || (github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'deploy-preview'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
