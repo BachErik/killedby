@@ -131,18 +131,19 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
-
-            const botComment = comments.data.find(comment =>
-              comment.body.includes('Preview is now online')
+      
+            const botComments = comments.data.filter(comment =>
+              comment.body.includes('Preview is now online') || comment.body.includes('Preview has been deleted')
             );
-
-            if (botComment) {
+      
+            for (const comment of botComments) {
               await github.rest.issues.deleteComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: botComment.id,
+                comment_id: comment.id,
               });
             }
+
 
       - name: Write New Comment on PR
         uses: actions/github-script@v7
@@ -187,16 +188,16 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
-  
-            const botComment = comments.data.find(comment =>
-              comment.body.includes('Preview is now online')
+      
+            const botComments = comments.data.filter(comment =>
+              comment.body.includes('Preview is now online') || comment.body.includes('Preview has been deleted')
             );
-  
-            if (botComment) {
+      
+            for (const comment of botComments) {
               await github.rest.issues.deleteComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: botComment.id,
+                comment_id: comment.id,
               });
             }
   
