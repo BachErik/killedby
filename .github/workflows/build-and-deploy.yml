@@ -284,8 +284,7 @@ jobs:
             });
 
   cleanup:
-    if: ${{ github.event.action == 'closed' || (github.event.action == 'unlabeled' && github.event.label.name == 'deploy-preview') }}
-    needs: deploy-preview
+    if: ${{ github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, 'deploy-preview') || (github.event.action == 'unlabeled' && github.event.label.name == 'deploy-preview') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
