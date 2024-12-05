@@ -114,7 +114,12 @@ jobs:
                         number: 80
           EOF
 
-          kubectl apply -f k8s/ --kubeconfig="${{ secrets.KUBE_CONFIG }}"
+      - name: Deploy Kubernetes Resources
+        uses: actions-hub/kubectl@v1.31.3
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: apply -f k8s/
 
       - name: Delete Existing Comment
         uses: actions/github-script@v7
@@ -154,6 +159,7 @@ jobs:
               repo: context.repo.repo,
               body: `🎉 **Preview is now online!**\n\n🔗 [Access Preview Here](${url})\n🕒 Last updated: ${updatedAt}`,
             });
+
 
   cleanup:
     if: ${{ github.event.action == 'closed' || (github.event.action == 'unlabeled' && github.event.label.name == 'deploy-preview') }}
