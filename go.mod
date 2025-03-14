@@ -1,6 +1,6 @@
 module bacherik/killedby
 
-go 1.23.6
+go 1.24.1
 
 require (
 	github.com/fogleman/gg v1.3.0
