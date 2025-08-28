@@ -121,7 +121,7 @@ jobs:
           EOF
 
       - name: Deploy to Kubernetes
-        uses: actions-hub/kubectl@v1.33.4
+        uses: actions-hub/kubectl@v1.34.0
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         with:
@@ -176,7 +176,7 @@ jobs:
 
     steps:
       - name: Cleanup Kubernetes Resources
-        uses: actions-hub/kubectl@v1.33.4
+        uses: actions-hub/kubectl@v1.34.0
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         with:
