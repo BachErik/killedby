@@ -27,7 +27,7 @@ Before setting up the project, ensure you have Docker and Git installed on your 
    git clone https://github.com/BachErik/killedby.json your-project-name
    cd your-project-name
    ```
-   > [!NOTE]
+> [!NOTE]
    > If you want to automatically update your repo cache on changes make sure you have the GitHub action configured correctly to your domain and set the `UPDATE_TOKEN`
 
 
