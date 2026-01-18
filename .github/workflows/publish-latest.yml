@@ -16,6 +16,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6
 
+      - name: Set commit SHA
+        run: echo "COMMIT_SHA=${{ github.sha }}" >> $GITHUB_ENV
+
       - name: Check if running in a pull request
         if: ${{ github.event_name == 'pull_request' }}
         run: echo "Running in a pull request, aborting workflow." && exit 0
