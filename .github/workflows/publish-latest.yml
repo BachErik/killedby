@@ -85,9 +85,8 @@ jobs:
             name: killedby-latest
             namespace: killedby-latest
             annotations:
-              cert-manager.io/cluster-issuer: "letsencrypt"
+              cert-manager.io/cluster-issuer: "letsencrypt-prod"
               kubernetes.io/ingress.class: traefik
-              ingress.kubernetes.io/whitelist-source-range: "192.168.0.0/16"
           spec:
             tls:
             - hosts:
