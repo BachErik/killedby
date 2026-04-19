@@ -119,7 +119,7 @@ jobs:
           args: rollout status deployment/killedby -n killedbypr${{ github.event.pull_request.number }} --timeout=30m
 
       - name: Delete Existing Comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -142,7 +142,7 @@ jobs:
             }
 
       - name: Write New Comment on PR
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -177,7 +177,7 @@ jobs:
           args: delete namespace killedbypr${{ github.event.pull_request.number }} --ignore-not-found=true
 
       - name: Delete Existing Comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -200,7 +200,7 @@ jobs:
             }
 
       - name: Write comment on PR
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
