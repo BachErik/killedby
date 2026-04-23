@@ -106,7 +106,7 @@ jobs:
           EOF
 
       - name: Deploy to Kubernetes
-        uses: actions-hub/kubectl@v1.35.4
+        uses: actions-hub/kubectl@v1.36.0
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
         with:
