@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # Build the PR head commit (not the synthetic merge commit)
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
