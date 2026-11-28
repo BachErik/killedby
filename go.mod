@@ -6,7 +6,7 @@ require (
 	github.com/fogleman/gg v1.3.0
 	github.com/gorilla/mux v1.8.1
 	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c
-	github.com/srwiley/rasterx v0.0.0-20220730225603-2ab79fcdd4ef
+	github.com/srwiley/rasterx v0.0.0-20261128054241-78f2104be592
 	golang.org/x/image v0.46.0
 )
 
