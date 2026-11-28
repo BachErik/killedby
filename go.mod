@@ -5,7 +5,7 @@ go 1.27.1
 require (
 	github.com/fogleman/gg v1.3.0
 	github.com/gorilla/mux v1.8.1
-	github.com/srwiley/oksvg v0.0.0-20221011165216-be6e8873101c
+	github.com/srwiley/oksvg v0.0.0-20261128051108-63f39d1445ed
 	github.com/srwiley/rasterx v0.0.0-20261128054241-78f2104be592
 	golang.org/x/image v0.48.0
 )
